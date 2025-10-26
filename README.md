@@ -1,7 +1,7 @@
 # mAmAtA — platformă B2B pentru colaborare creativă
 
-> 🔹 Proiect dezvoltat pe **trackul de Servicii Private** (principal)  
-> 🔹 cu extensie pe **trackul de Cultură & Creativitate** (secundar)
+> = Proiect dezvoltat pe **trackul de Servicii Private** (principal)  
+> = cu extensie pe **trackul de Cultură & Creativitate** (secundar)
 
 **mAmAtA** este un hub unde companiile pot colabora ușor cu artiști, freelanceri și influenceri.  
 Totul se întâmplă într-un singur loc — de la cerere și ofertă până la contract, livrabile și plată.
