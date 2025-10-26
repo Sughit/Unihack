@@ -42,7 +42,7 @@ Astfel, companiile pot lucra cu freelanceri globali fără griji legale.
 
 ---
 
-###  Plăți & facturare (opțional)
+###  Plăți & facturare 
 Sistemul de plăți integrat elimină riscurile și birocrația:
 - **Stripe escrow:** banii sunt blocați până la confirmarea livrării.  
 - **Comisioane transparente:** platforma aplică doar un procent prestabilit.  
