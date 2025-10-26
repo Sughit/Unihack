@@ -8,7 +8,7 @@ Totul se întâmplă într-un singur loc — de la cerere și ofertă până la 
 
 ---
 
-## 🔍 Ce oferă platforma
+##  Ce oferă platforma
 
 ###  Descoperire & căutare
 mAmAtA simplifică procesul prin care companiile găsesc creatori potriviți.  
@@ -90,10 +90,10 @@ Sistemul de notificări menține toți utilizatorii conectați la progres:
 
 | Domeniu | Tehnologii utilizate |
 |----------|----------------------|
-| **Frontend** | ⚛️ [React](https://react.dev) + [Next.js](https://nextjs.org) |
-| **Stilizare** | 🎨 [Tailwind CSS](https://tailwindcss.com) |
-| **Backend / ORM** | 🧩 [Prisma](https://www.prisma.io) + PostgreSQL |
-| **Plăți** | 💳 [Stripe](https://stripe.com) (checkout, escrow, webhooks) |
-| **Contracte** | ✍️ [DocuSign](https://www.docusign.com) / [Dropbox Sign](https://www.dropbox.com/sign) / [Documenso](https://documenso.com) |
-| **Deploy** | ▲ [Vercel](https://vercel.com) pentru frontend • ⚙️ [Render](https://render.com) pentru servicii auxiliare |
+| **Frontend** |  [React](https://react.dev) + [Next.js](https://nextjs.org) |
+| **Stilizare** |  [Tailwind CSS](https://tailwindcss.com) |
+| **Backend / ORM** |  [Prisma](https://www.prisma.io) + PostgreSQL |
+| **Plăți** |  [Stripe](https://stripe.com) (checkout, escrow, webhooks) |
+| **Contracte** |  [DocuSign](https://www.docusign.com) / [Dropbox Sign](https://www.dropbox.com/sign) / [Documenso](https://documenso.com) |
+| **Deploy** |  [Vercel](https://vercel.com) pentru frontend •  [Render](https://render.com) pentru servicii auxiliare |
 
