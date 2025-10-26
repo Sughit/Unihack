@@ -70,7 +70,6 @@ Sistemul de notificări menține toți utilizatorii conectați la progres:
 - Alerte pentru **mențiuni, mesaje, schimbări de status, livrabile noi**.  
 - Notificări **email + push**, configurabile din preferințe.  
 - **Rezumat zilnic/săptămânal** cu progresul proiectelor active.  
-- Integrare cu Slack sau Discord (opțional) pentru echipe corporate.
 
 Nimic important nu scapă, indiferent câte proiecte rulează simultan.
 
