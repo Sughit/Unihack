@@ -23,7 +23,9 @@ Toate etapele colaborării sunt integrate într-un singur spațiu de lucru:
 - **Brief inteligent:** completare ghidată, câmpuri personalizabile și atașamente.  
 - **Ofertare rapidă:** artiștii pot răspunde cu propuneri clare (preț, livrabile, termene).  
 - **Milestones:** împărțirea proiectului în etape, fiecare cu livrabile și status.  
-- **Chat dedicat:** conversații în timp real cu suport pentru fișiere și previzualizări media.  
+- **Chat dedicat:** conversații în timp real cu suport pentru fișiere și previzualizări media.
+
+
 Tot fluxul este transparent și ușor de urmărit, fără e-mailuri sau fișiere pierdute.
 
 ---
