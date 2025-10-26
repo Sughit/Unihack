@@ -86,7 +86,7 @@ Sistemul de notificări menține toți utilizatorii conectați la progres:
 ---
 
 
-## ⚙️ Stack Tehnologic
+##  Stack Tehnologic
 
 | Domeniu | Tehnologii utilizate |
 |----------|----------------------|
