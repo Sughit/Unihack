@@ -13,7 +13,6 @@ Poți explora **profiluri detaliate** cu portofolii, testimoniale și experienț
 Căutarea permite:
 - Filtrare după **skilluri, industrii, buget, locație** și **disponibilitate**.
 - Sortare după rating, proiecte finalizate sau data ultimei activități.
-- Acces rapid la **profiluri verificate** și “match suggestions” bazate pe brief.
 
 Astfel, brandurile pot identifica partenerii potriviți în câteva minute, nu zile.
 
