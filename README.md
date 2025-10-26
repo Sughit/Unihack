@@ -71,14 +71,12 @@ Sistemul de notificări menține toți utilizatorii conectați la progres:
 - Notificări **email + push**, configurabile din preferințe.  
 - **Rezumat zilnic/săptămânal** cu progresul proiectelor active.  
 
-Nimic important nu scapă, indiferent câte proiecte rulează simultan.
 
 ---
 
 ###  Alte funcționalități complementare
 - **Dashboard personalizat:** overview rapid al proiectelor, plăților și contractelor.  
 - **Mod dark/light**, adaptabil pe preferințele utilizatorului.  
-- **Export date:** rapoarte CSV sau PDF pentru management și contabilitate.  
 - **Sistem de recomandări:** proiecte sugerate în funcție de profil și istoric.  
 - **Suport multi-limbă (RO/EN):** accesibil pentru colaborări internaționale.
 
