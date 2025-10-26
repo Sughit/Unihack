@@ -24,8 +24,6 @@ Toate etapele colaborării sunt integrate într-un singur spațiu de lucru:
 - **Ofertare rapidă:** artiștii pot răspunde cu propuneri clare (preț, livrabile, termene).  
 - **Milestones:** împărțirea proiectului în etape, fiecare cu livrabile și status.  
 - **Chat dedicat:** conversații în timp real cu suport pentru fișiere și previzualizări media.  
-- **Calendar integrat:** sincronizare automată cu Cal.com pentru ședințe și livrări.
-
 Tot fluxul este transparent și ușor de urmărit, fără e-mailuri sau fișiere pierdute.
 
 ---
