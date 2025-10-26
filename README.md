@@ -1,101 +1,87 @@
-# UnihackBrandMuse — platformă B2B pentru colaborare creativă
+# mAmAtA — platformă B2B pentru colaborare creativă
 
-Ce este: un hub unde companiile descoperă artiști, freelanceri și influenceri, pornesc proiecte vizuale, discută în timp real, semnează contracte și urmăresc totul într-un singur loc (brief → colaborare → livrabile → plată).
+**mAmAtA** este un hub unde companiile pot colabora ușor cu artiști, freelanceri și influenceri.  
+Totul se întâmplă într-un singur loc — de la cerere și ofertă până la contract, livrabile și plată.
 
-Ce poate face platforma:
+---
 
-Descoperire & căutare: profiluri/portofolii filtrabile, căutare rapidă după skill, industrie, buget, disponibilitate.
+## 🔍 Ce oferă platforma
 
-Proiecte end-to-end: brief, ofertare, milestones, fișiere, chat, calendar/booking.
+###  Descoperire & căutare
+mAmAtA simplifică procesul prin care companiile găsesc creatori potriviți.  
+Poți explora **profiluri detaliate** cu portofolii, testimoniale și experiență verificată.  
+Căutarea permite:
+- Filtrare după **skilluri, industrii, buget, locație** și **disponibilitate**.
+- Sortare după rating, proiecte finalizate sau data ultimei activități.
+- Acces rapid la **profiluri verificate** și “match suggestions” bazate pe brief.
 
-Contracte & conformitate: șabloane, semnare electronică, istoric audit.
+Astfel, brandurile pot identifica partenerii potriviți în câteva minute, nu zile.
 
-Plăți (opțional): comision/escrow, facturi, rapoarte.
+---
 
-Reputație: rating & review pe proiecte, scoruri de calitate.
+###  Proiecte end-to-end
+Toate etapele colaborării sunt integrate într-un singur spațiu de lucru:
+- **Brief inteligent:** completare ghidată, câmpuri personalizabile și atașamente.  
+- **Ofertare rapidă:** artiștii pot răspunde cu propuneri clare (preț, livrabile, termene).  
+- **Milestones:** împărțirea proiectului în etape, fiecare cu livrabile și status.  
+- **Chat dedicat:** conversații în timp real cu suport pentru fișiere și previzualizări media.  
+- **Calendar integrat:** sincronizare automată cu Cal.com pentru ședințe și livrări.
 
-Notificări: email + push, mențiuni, schimbări de status.
+Tot fluxul este transparent și ușor de urmărit, fără e-mailuri sau fișiere pierdute.
 
-Roluri și permisiuni
+---
 
-Admin – guvernanță, moderare, metrici globale, gestionare comisioane.
+### Contracte & conformitate
+Legalitatea colaborărilor este acoperită nativ:
+- **Șabloane standardizate** pentru colaborări comerciale, freelancing, NDA-uri etc.  
+- **Semnare electronică** prin DocuSign, Dropbox Sign sau Documenso.  
+- **Arhivare automată** a contractelor semnate, accesibile oricând.  
+- **Istoric de audit** pentru toate modificările (cine, când, ce a semnat).  
+- **Compatibilitate legală** cu reglementările UE (eIDAS) și GDPR.
 
-Company – creează briefuri, contracte, plăți, echipe interne.
+Astfel, companiile pot lucra cu freelanceri globali fără griji legale.
 
-Artist/Freelancer – portofoliu, ofertare, calendar, livrabile.
-RBAC este aplicat la nivel de rută, API și date.
+---
 
-Arhitectură (cum e construit)
-Frontend / Web app
+###  Plăți & facturare (opțional)
+Sistemul de plăți integrat elimină riscurile și birocrația:
+- **Stripe escrow:** banii sunt blocați până la confirmarea livrării.  
+- **Comisioane transparente:** platforma aplică doar un procent prestabilit.  
+- **Facturi automate:** generate la fiecare milestone complet.  
+- **Rapoarte financiare:** vizualizări clare pe proiecte, luni sau echipe.  
+- **Plăți multi-valută:** suport pentru EUR, USD, RON și alte valute majore.
 
-Next.js (React) cu SSR/SSG pentru pagini publice rapide (SEO) și routing file-based; API Routes pentru endpoint-uri ușoare.
+Rezultatul: flux de plăți sigur, automatizat și fără întârzieri.
 
-TypeScript peste tot pentru tipare stricte și autocomplete solid.
+---
 
-UI: Tailwind CSS + shadcn/ui (butoane, carduri, dialoguri) → coerență vizuală + velocity.
+###  Reputație & feedback
+Fiecare colaborare contribuie la construirea unei reputații reale:
+- **Rating bidirecțional** (companie ↔ artist).  
+- **Scor de calitate** calculat pe baza punctualității, comunicării și satisfacției clientului.  
+- **Badge-uri de performanță** pentru top creatori (ex: “Trusted Partner”, “Top Rated”).  
+- **Profiluri publice optimizate SEO** – artiștii își pot prezenta munca și în afara platformei.
 
-Formulare: react-hook-form + Zod (validare tipată, erori clare).
+Astfel, în timp, se creează un ecosistem bazat pe merit și încredere reală.
 
-Data fetching & cache: TanStack Query (cache, revalidare, optimistic updates).
+---
 
-Autentificare & Autorizare
+###  Notificări inteligente
+Sistemul de notificări menține toți utilizatorii conectați la progres:
+- Alerte pentru **mențiuni, mesaje, schimbări de status, livrabile noi**.  
+- Notificări **email + push**, configurabile din preferințe.  
+- **Rezumat zilnic/săptămânal** cu progresul proiectelor active.  
+- Integrare cu Slack sau Discord (opțional) pentru echipe corporate.
 
-Clerk sau Auth.js pentru email/OAuth; sesiuni sigure, MFA opțional.
+Nimic important nu scapă, indiferent câte proiecte rulează simultan.
 
-RBAC pe roluri (admin/company/artist) + guards la nivel de API.
+---
 
-Backend & Date
+###  Alte funcționalități complementare
+- **Dashboard personalizat:** overview rapid al proiectelor, plăților și contractelor.  
+- **Mod dark/light**, adaptabil pe preferințele utilizatorului.  
+- **Export date:** rapoarte CSV sau PDF pentru management și contabilitate.  
+- **Sistem de recomandări:** proiecte sugerate în funcție de profil și istoric.  
+- **Suport multi-limbă (RO/EN):** accesibil pentru colaborări internaționale.
 
-PostgreSQL pe Supabase sau Neon; Prisma ca ORM (migrări, tipare generate).
-
-Chat în timp real: Socket.IO (self-host) sau Pusher/Ably (managed), cu livrare fallback.
-
-Stocare fișiere: S3/R2 (upload via uploadthing) sau Supabase Storage pentru portofolii, imagini, PDF-uri.
-
-Căutare: Meilisearch (self-host) sau Algolia pentru query-uri full-text asupra profilurilor și proiectelor.
-
-Plăți: Stripe (checkout, comisioane, escrow, webhooks).
-
-Contracte: DocuSign/Dropbox Sign sau Documenso (open-source) pentru semnare.
-
-Calendar & booking: Cal.com embed; sincronizare prin webhooks.
-
-Email & notificări: Resend (email) + FCM/OneSignal (push).
-
-Observabilitate: Sentry (erori) + PostHog (analytics, funnels).
-
-Cache & rate-limit: Upstash Redis (throttling, sesiuni volatile, queue ușoare).
-
-Deploy & operare
-
-Vercel pentru web (SSR/Edge, previzualizări PR).
-
-Railway/Render pentru servicii auxiliare (chat, workers/queue).
-
-Migrații Prisma automatizate în pipeline; environment-uri izolate.
-
-Securitate & bune practici
-
-Validare dublă Zod (client + API) și schema-driven forms.
-
-S3 pre-signed URLs, antivirus la upload (opțional), versiuni fișiere.
-
-Webhooks semnate (Stripe, Cal.com, semnare).
-
-Coloană audit (createdBy/updatedBy), soft-delete, row-level security unde e cazul.
-
-Backup DB automat + rotația cheilor/secrets.
-
-Fluxuri cheie (MVP)
-
-Onboarding: OAuth/email → alegere rol → setup profil/portofoliu.
-
-Publicare brief: compania definește buget, deadline, skilluri → primește match-uri.
-
-Invitații & ofertare: chat + atașamente, propuneri de milestones.
-
-Contract & semnare: template → semnare → generare PDF → arhivare.
-
-Calendar & livrare: programare sesiuni prin Cal.com, livrabile în fișiere.
-
-Plată & review: Stripe capture/escrow → marcare “complete” → rating bidirecțional.
+---
