@@ -83,7 +83,7 @@ Sistemul de notificări menține toți utilizatorii conectați la progres:
 - **Sistem de recomandări:** proiecte sugerate în funcție de profil și istoric.  
 - **Suport multi-limbă (RO/EN):** accesibil pentru colaborări internaționale.
 
----
+
 
 
 ##  Stack Tehnologic
