@@ -1,99 +1,92 @@
-# Creon — platformă B2B pentru colaborare creativă
+# Creon — B2B Platform for Creative Collaboration
 
-> - Proiect dezvoltat pe **trackul de Servicii Private** (principal)  
-> - cu extensie pe **trackul de Cultură & Divertisment** (secundar)
+> - Project developed under the **Private Services track** (main)  
+> - with an extension into the **Culture & Entertainment track** (secondary)
 
-**Creon** este un hub unde companiile pot colabora ușor cu artiști, freelanceri și influenceri pentru diferite colaborări, reclame sau rebrand-uri.
-Totul se întâmplă într-un singur loc — de la cerere și ofertă până la contract, livrabile și plată.
-
----
-
-##  Ce oferă platforma
-
-###  Descoperire & căutare
-Creon simplifică procesul prin care companiile găsesc creatori potriviți.  
-Poți explora **profiluri detaliate** cu portofolii, testimoniale și experiență verificată.  
-Căutarea permite:
-- Filtrare după **skilluri, industrii, buget, locație** și **disponibilitate**.
-- Sortare după rating, proiecte finalizate sau data ultimei activități.
-
-Astfel, brandurile pot identifica partenerii potriviți în câteva minute, nu zile.
+**Creon** is a hub where companies can easily collaborate with artists, freelancers, and influencers for various projects, advertisements, or rebranding campaigns.  
+Everything happens in one place — from request and offer to contract, deliverables, and payment.
 
 ---
 
-###  Proiecte end-to-end
-Toate etapele colaborării sunt integrate într-un singur spațiu de lucru:
-- **Brief inteligent:** completare ghidată, câmpuri personalizabile și atașamente.  
-- **Ofertare rapidă:** artiștii pot răspunde cu propuneri clare (preț, livrabile, termene).  
-- **Milestones:** împărțirea proiectului în etape, fiecare cu livrabile și status.  
-- **Chat dedicat:** conversații în timp real cu suport pentru fișiere și previzualizări media.
+##  What the Platform Offers
 
-
-Tot fluxul este transparent și ușor de urmărit, fără e-mailuri sau fișiere pierdute.
-
----
-
-### Contracte & conformitate
-Legalitatea colaborărilor este acoperită nativ:
-- **Șabloane standardizate** pentru colaborări comerciale, freelancing, NDA-uri etc.  
-- **Semnare electronică** prin DocuSign, Dropbox Sign sau Documenso.  
-- **Arhivare automată** a contractelor semnate, accesibile oricând.  
-- **Istoric de audit** pentru toate modificările (cine, când, ce a semnat).  
-- **Compatibilitate legală** cu reglementările UE (eIDAS) și GDPR.
-
-Astfel, companiile pot lucra cu freelanceri globali fără griji legale.
+### Discovery & Search
+Creon simplifies how companies find the right creators.  
+You can explore **detailed profiles** with portfolios, testimonials, and verified experience.  
+The search system allows:
+- Filtering by **skills, industries, budget, location**, and **availability**  
+- Sorting by rating, completed projects, or last activity date  
 
 ---
 
-###  Plăți & facturare 
-Sistemul de plăți integrat elimină riscurile și birocrația:
-- **Stripe escrow:** banii sunt blocați până la confirmarea livrării.  
-- **Comisioane transparente:** platforma aplică doar un procent prestabilit.  
-- **Facturi automate:** generate la fiecare milestone complet.  
-- **Rapoarte financiare:** vizualizări clare pe proiecte, luni sau echipe.  
-- **Plăți multi-valută:** suport pentru EUR, USD, RON și alte valute majore.
-
-Rezultatul: flux de plăți sigur, automatizat și fără întârzieri.
+### End-to-End Projects
+All collaboration stages are integrated into a single workspace:
+- **Smart brief:** guided completion, customizable fields, and attachments  
+- **Quick proposals:** artists can respond with clear offers (price, deliverables, deadlines)  
+- **Milestones:** split the project into stages, each with deliverables and status  
+- **Dedicated chat:** real-time conversations with file sharing and media previews  
 
 ---
 
-###  Reputație & feedback
-Fiecare colaborare contribuie la construirea unei reputații reale:
-- **Rating bidirecțional** (companie ↔ artist).  
-- **Scor de calitate** calculat pe baza punctualității, comunicării și satisfacției clientului.  
-- **Badge-uri de performanță** pentru top creatori (ex: “Trusted Partner”, “Top Rated”).  
-- **Profiluri publice optimizate SEO** – artiștii își pot prezenta munca și în afara platformei.
-
-Astfel, în timp, se creează un ecosistem bazat pe merit și încredere reală.
-
----
-
-###  Notificări inteligente
-Sistemul de notificări menține toți utilizatorii conectați la progres:
-- Alerte pentru **mențiuni, mesaje, schimbări de status, livrabile noi**.  
-- Notificări **email + push**, configurabile din preferințe.  
-- **Rezumat zilnic/săptămânal** cu progresul proiectelor active.  
-
+### Contracts & Compliance
+All legal aspects of collaboration are handled natively:
+- **Standardized templates** for commercial collaborations, freelancing, NDAs, etc.  
+- **Electronic signatures** via DocuSign, Dropbox Sign, or Documenso  
+- **Automatic archiving** of signed contracts, accessible anytime  
+- **Audit history** for every change (who signed, when, and what)  
+- **Legal compliance** with EU regulations (eIDAS) and GDPR  
 
 ---
 
-###  Alte funcționalități complementare
-- **Dashboard personalizat:** overview rapid al proiectelor, plăților și contractelor.  
-- **Mod dark/light**, adaptabil pe preferințele utilizatorului.  
-- **Sistem de recomandări:** proiecte sugerate în funcție de profil și istoric.  
-- **Suport multi-limbă (RO/EN):** accesibil pentru colaborări internaționale.
+### Payments & Invoicing 
+The integrated payment system eliminates risks and bureaucracy:
+- **Stripe escrow:** funds are held until delivery is confirmed  
+- **Transparent fees:** only a preset percentage applied by the platform  
+- **Automatic invoices:** generated for each completed milestone  
+- **Financial reports:** clear overviews by project, month, or team  
+- **Multi-currency payments:** support for EUR, USD, RON, and other major currencies  
 
+---
 
+### Reputation & Feedback
+Each collaboration helps build a creator’s real reputation:
+- **Two-way rating** (company ↔ artist)  
+- **Quality score** based on punctuality, communication, and client satisfaction  
+- **Performance badges** for top creators (e.g., “Trusted Partner”, “Top Rated”)  
+- **SEO-optimized public profiles** – showcase work beyond the platform  
 
+---
 
-##  Stack Tehnologic
+### Smart Notifications
+Keep users informed and connected:
+- Alerts for **mentions, messages, status changes, new deliverables**  
+- **Email + push notifications**, configurable from preferences  
+- **Daily/weekly summaries** of active project progress  
 
-| Domeniu | Tehnologii utilizate |
-|----------|----------------------|
-| **Frontend** |  [React](https://react.dev) + [Next.js](https://nextjs.org) |
-| **Stilizare** |  [Tailwind CSS](https://tailwindcss.com) |
-| **Backend / ORM** |  [Prisma](https://www.prisma.io) + PostgreSQL |
-| **Plăți** |  [Stripe](https://stripe.com) (checkout, escrow, webhooks) |
-| **Contracte** |  [DocuSign](https://www.docusign.com) / [Dropbox Sign](https://www.dropbox.com/sign) / [Documenso](https://documenso.com) |
-| **Deploy** |  [Vercel](https://vercel.com) pentru frontend •  [Render](https://render.com) pentru servicii auxiliare |
+---
 
+### Other Complementary Features
+- **Personalized dashboard:** quick overview of projects, payments, and contracts  
+- **Dark/light mode:** adaptable to user preference  
+- **Recommendation system:** suggested projects based on profile and history  
+- **Multi-language support (RO/EN):** ready for international collaborations  
+
+---
+
+## Tech Stack
+
+| Domain | Technologies Used |
+|--------|--------------------|
+| **Frontend** | [React](https://react.dev) + [Next.js](https://nextjs.org) |
+| **Styling** | [Tailwind CSS](https://tailwindcss.com) |
+| **Backend / ORM** | [Prisma](https://www.prisma.io) + PostgreSQL |
+| **Payments** | [Stripe](https://stripe.com) (checkout, escrow, webhooks) |
+| **Contracts** | [DocuSign](https://www.docusign.com) / [Dropbox Sign](https://www.dropbox.com/sign) / [Documenso](https://documenso.com) |
+| **Deploy** | [Vercel](https://vercel.com) for frontend • [Render](https://render.com) for auxiliary services |
+
+---
+
+## Summary
+Creon bridges the gap between **businesses** and **creative professionals**, bringing every step of collaboration — from discovery to payment — into a unified, automated, and transparent platform.
+
+> *“Empowering creativity through seamless collaboration.”*
