@@ -3,7 +3,7 @@
 > - Proiect dezvoltat pe **trackul de Servicii Private** (principal)  
 > - cu extensie pe **trackul de Cultură & Divertisment** (secundar)
 
-**mAmAtA** este un hub unde companiile pot colabora ușor cu artiști, freelanceri și influenceri pentru diferite colaborări, reclame sau rebrand-uri.
+**Creon** este un hub unde companiile pot colabora ușor cu artiști, freelanceri și influenceri pentru diferite colaborări, reclame sau rebrand-uri.
 Totul se întâmplă într-un singur loc — de la cerere și ofertă până la contract, livrabile și plată.
 
 ---
