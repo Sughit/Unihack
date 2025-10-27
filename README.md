@@ -88,5 +88,3 @@ Keep users informed and connected:
 
 ## Summary
 Creon bridges the gap between **businesses** and **creative professionals**, bringing every step of collaboration — from discovery to payment — into a unified, automated, and transparent platform.
-
-> *“Empowering creativity through seamless collaboration.”*
