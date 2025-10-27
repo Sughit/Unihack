@@ -1,4 +1,4 @@
-# mAmAtA — platformă B2B pentru colaborare creativă
+# Creon — platformă B2B pentru colaborare creativă
 
 > - Proiect dezvoltat pe **trackul de Servicii Private** (principal)  
 > - cu extensie pe **trackul de Cultură & Divertisment** (secundar)
@@ -11,7 +11,7 @@ Totul se întâmplă într-un singur loc — de la cerere și ofertă până la 
 ##  Ce oferă platforma
 
 ###  Descoperire & căutare
-mAmAtA simplifică procesul prin care companiile găsesc creatori potriviți.  
+Creon simplifică procesul prin care companiile găsesc creatori potriviți.  
 Poți explora **profiluri detaliate** cu portofolii, testimoniale și experiență verificată.  
 Căutarea permite:
 - Filtrare după **skilluri, industrii, buget, locație** și **disponibilitate**.
