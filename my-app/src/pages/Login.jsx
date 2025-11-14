@@ -63,7 +63,7 @@ export default function Login() {
 
         <p className="ui-text-muted-xs">
           You don't have an account?{" "}
-          <Link to="/register" className="ui-link-underline">
+          <Link to="/signup" className="ui-link-underline">
             Register
           </Link>
         </p>
