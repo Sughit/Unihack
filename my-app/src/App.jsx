@@ -7,9 +7,12 @@ import Main from "./pages/Main.jsx";
 import Profile from "./pages/Profile.jsx";
 import Page404 from "./pages/404.jsx";
 
+import Navbar from "./components/Navbar.jsx";
+
 export default function App() {
   return (
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
