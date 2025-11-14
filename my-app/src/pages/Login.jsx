@@ -64,7 +64,7 @@ export default function Login() {
         <p className="ui-text-muted-xs">
           You don't have an account?{" "}
           <Link to="/register" className="ui-link-underline">
-            Log in
+            Register
           </Link>
         </p>
       </div>
