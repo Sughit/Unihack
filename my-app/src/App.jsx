@@ -6,6 +6,7 @@ import Signup from "./pages/Signup.jsx";
 import Main from "./pages/Main.jsx";
 import Profile from "./pages/Profile.jsx";
 import Page404 from "./pages/404.jsx";
+import Contact from "./pages/Contact.jsx";
 
 import Navbar from "./components/Navbar.jsx";
 
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/main" element={<Main />} />
         <Route path="/profile" element={<Profile />} /> 
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<Page404 />} />
       </Routes>
     </Router>
