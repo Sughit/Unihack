@@ -8,8 +8,8 @@ export default function Navbar() {
         {/* STÂNGA – LOGO / BRAND */}
         <Link to="/" className="nav-brand">
           <span className="nav-brand-highlight" />
-          <span className="nav-brand-circle">U</span>
-          <span className="nav-brand-text">Unihack</span>
+          <span className="nav-brand-circle">C</span>
+          <span className="nav-brand-text">Creon</span>
         </Link>
 
         {/* CENTRU – LINK-URI */}
