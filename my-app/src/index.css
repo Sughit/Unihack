@@ -193,3 +193,76 @@
 .ui-link-underline {
   @apply font-semibold underline;
 }
+/* ============================
+   GENERIC PROFILE / LAYOUT UI
+=============================== */
+
+.ui-page-surface {
+  @apply min-h-screen bg-slate-100 flex justify-center px-4 py-10;
+}
+
+/* container mare (card gri) */
+.ui-layout-card {
+  @apply w-full max-w-5xl bg-slate-200
+    rounded-3xl border-[3px] border-slate-900
+    p-8;
+}
+
+/* header cu avatar + titlu */
+.ui-layout-header {
+  @apply flex items-center gap-8 mb-6;
+}
+
+.ui-avatar-circle {
+  @apply h-32 w-32 rounded-full border-[3px] border-slate-900
+    flex items-center justify-center;
+}
+
+/* „cap” stilizat, doar ca placeholder */
+.ui-avatar-placeholder {
+  @apply block h-16 w-16 rounded-full border-[3px] border-slate-900;
+}
+
+.ui-heading-main {
+  @apply text-4xl font-black tracking-tight;
+}
+
+.ui-heading-sub {
+  @apply text-xl font-semibold text-slate-700;
+}
+
+/* body: sidebar stânga + content dreapta */
+.ui-layout-body {
+  @apply flex mt-2;
+}
+
+/* sidebar vertical */
+.ui-sidebar {
+  @apply w-56 border-[3px] border-slate-900 border-r-0
+    rounded-bl-3xl pt-4 pb-6 px-4;
+}
+
+.ui-sidebar-nav {
+  @apply flex flex-col gap-3;
+}
+
+.ui-sidebar-item {
+  @apply w-full text-left
+    border-[3px] border-slate-900 bg-slate-200
+    px-3 py-2 text-lg font-black capitalize;
+}
+
+.ui-sidebar-item-active {
+  @apply bg-white;
+}
+
+/* zona mare de conținut din dreapta */
+.ui-main-area {
+  @apply flex-1;
+}
+
+.ui-main-panel {
+  @apply h-full min-h-[260px]
+    border-[3px] border-slate-900
+    rounded-tr-3xl px-6 py-4 bg-slate-100;
+}

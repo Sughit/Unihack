@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import Home from "./Home.jsx";
-import Login from "./Login.jsx";
-import Signup from "./Signup.jsx";
-import Main from "./Main.jsx";
-import Profile from "./Profile.jsx";
-import Page404 from "./404.jsx";
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Signup from "./pages/Signup.jsx";
+import Main from "./pages/Main.jsx";
+import Profile from "./pages/Profile.jsx";
+import Page404 from "./pages/404.jsx";
 
 export default function App() {
   return (
