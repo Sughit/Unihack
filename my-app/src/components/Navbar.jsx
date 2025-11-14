@@ -23,20 +23,20 @@ export default function Navbar() {
             Home
           </NavLink>
           <NavLink
-            to="/features"
+            to="/search"
             className={({ isActive }) =>
               `nav-link ${isActive ? "nav-link-active" : ""}`
             }
           >
-            Features
+            Search
           </NavLink>
           <NavLink
-            to="/docs"
+            to="/contact"
             className={({ isActive }) =>
               `nav-link ${isActive ? "nav-link-active" : ""}`
             }
           >
-            Docs
+            Contact
           </NavLink>
         </nav>
 
