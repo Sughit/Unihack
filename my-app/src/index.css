@@ -261,3 +261,142 @@
     @apply -translate-y-0.5 translate-x-0.5;
   }
 }
+/* ============================
+   MAIN PAGE LAYOUT (NEO BRUTALISM)
+=============================== */
+
+.ui-main-shell {
+  @apply min-h-screen bg-slate-100 flex justify-center px-4 py-6;
+}
+
+.ui-main-grid {
+  @apply w-full max-w-7xl flex gap-6;
+}
+
+.ui-col-left {
+  @apply basis-64 shrink-0;
+}
+
+.ui-col-center {
+  @apply flex-1;
+}
+
+.ui-col-right {
+  @apply basis-64 shrink-0;
+}
+
+/* Panouri de bază */
+.ui-panel {
+  @apply rounded-3xl border-[4px] border-slate-900 bg-slate-200
+    p-4 shadow-[8px_8px_0_0_rgba(15,23,42,1)];
+}
+
+.ui-panel-soft {
+  @apply bg-amber-100;
+}
+
+.ui-panel-title {
+  @apply text-lg font-black tracking-tight;
+}
+
+/* Liste verticale (Following / Chats) */
+.ui-list-vertical {
+  @apply flex flex-col gap-2;
+}
+
+.ui-list-item {
+  @apply w-full text-left
+    rounded-2xl border-[3px] border-slate-900 bg-amber-100
+    px-3 py-2 text-sm font-semibold
+    shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+    hover:-translate-y-0.5 hover:translate-x-0.5
+    transition-transform duration-150;
+}
+
+/* Textarea + input în composer */
+.ui-textarea {
+  @apply w-full rounded-2xl bg-white
+    border-[4px] border-slate-900
+    px-3 py-2 text-sm outline-none
+    shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+    resize-none;
+}
+
+/* Card pentru fiecare post */
+.ui-post-card {
+  @apply rounded-3xl border-[4px] border-slate-900 bg-white
+    p-4 shadow-[6px_6px_0_0_rgba(15,23,42,1)];
+}
+
+.ui-post-title {
+  @apply text-base font-bold mb-1;
+}
+
+.ui-post-meta {
+  @apply text-xs text-slate-500 mb-2;
+}
+
+.ui-post-body {
+  @apply text-sm text-slate-800;
+}
+
+/* Acțiuni sub post (Like / Comments) */
+.ui-post-actions {
+  @apply mt-3 flex gap-2;
+}
+
+.ui-post-action {
+  @apply inline-flex items-center justify-center
+    rounded-2xl border-[3px] border-slate-900 bg-slate-200
+    px-3 py-1 text-xs font-semibold
+    shadow-[3px_3px_0_0_rgba(15,23,42,1)]
+    hover:-translate-y-0.5 hover:translate-x-0.5
+    transition-transform duration-150;
+}
+
+/* Buton primar (Post / Send) */
+.ui-btn-primary {
+  @apply bg-slate-900 text-amber-200
+    shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+    border-[4px] border-slate-900
+    hover:-translate-y-0.5 hover:translate-x-0.5
+    transition-transform duration-150;
+}
+
+/* ============================
+   CHAT POPUP (dreapta jos)
+=============================== */
+
+.ui-chat-popup {
+  @apply fixed bottom-6 right-6
+    w-full max-w-sm
+    rounded-3xl border-[4px] border-slate-900 bg-pink-100
+    shadow-[8px_8px_0_0_rgba(15,23,42,1)]
+    flex flex-col overflow-hidden;
+}
+
+.ui-chat-header {
+  @apply flex items-center justify-between
+    px-4 py-2 border-b-[3px] border-slate-900
+    font-bold;
+}
+
+.ui-chat-close {
+  @apply w-7 h-7 flex items-center justify-center
+    rounded-full border-[2px] border-slate-900 bg-white
+    text-xs;
+}
+
+.ui-chat-messages {
+  @apply flex-1 px-4 py-3;
+}
+
+.ui-chat-input-row {
+  @apply flex gap-2 px-4 py-3 border-t-[3px] border-slate-900 bg-pink-100;
+}
+
+.ui-chat-input {
+  @apply flex-1 rounded-2xl border-[3px] border-slate-900 bg-white
+    px-3 py-1.5 text-sm outline-none
+    shadow-[4px_4px_0_0_rgba(15,23,42,1)];
+}
