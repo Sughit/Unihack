@@ -115,159 +115,81 @@
 
 @import "tailwindcss";
 
-
 /* ============================
-   SIGNUP PAGE CUSTOM CLASSES
+   GENERIC UI LAYOUT CLASSES
 =============================== */
 
-.signup-wrapper {
+.ui-page-center {
   @apply min-h-screen bg-slate-100 flex items-center justify-center px-4;
 }
 
-.signup-card-container {
-  @apply relative w-full max-w-md;
-}
-
-/* TAB REGISTER */
-.signup-tab {
-  @apply absolute -top-8 left-1/2 -translate-x-1/2
-    inline-flex items-center justify-center
-    px-10 py-2 rounded-full border-[4px] border-slate-900 bg-white
-    shadow-[6px_6px_0_0_rgba(15,23,42,1)] relative;
-}
-
-.signup-tab-highlight {
-  @apply absolute inset-x-3 bottom-1 h-2 rounded-full bg-amber-300 -z-10;
-}
-
-.signup-tab-text {
-  @apply text-2xl font-black tracking-[0.35em] uppercase text-slate-900;
-}
-
-/* CARD */
-.signup-card {
-  @apply relative rounded-[2.75rem] border-[4px] border-slate-900
-    bg-white px-8 pt-16 pb-8 shadow-[8px_8px_0_0_rgba(15,23,42,1)]
-    overflow-hidden;
-}
-
-/* Top Decorative Lines */
-.signup-top-lines {
-  @apply mb-6 mt-2;
-}
-
-.signup-line-black {
-  @apply h-1.5 w-32 rounded-full bg-slate-900;
-}
-
-.signup-line-yellow {
-  @apply mt-1 h-1 w-40 rounded-full bg-amber-300;
-}
-
-/* Vertical Line */
-.signup-vertical-line {
-  @apply pointer-events-none absolute top-16 right-16 bottom-16
-    border-l-4 border-dashed border-amber-300;
-}
-
-/* Labels */
-.signup-label {
-  @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-900 mb-1;
-}
-
-/* Form spacing */
-.signup-form {
-  @apply space-y-5;
-}
-
-/* Button container */
-.signup-btn-container {
-  @apply mt-4 flex justify-end;
-}
-
-/* Button style override */
-.signup-btn {
-  @apply bg-slate-900 text-amber-200;
-}
-
-/* Login Text */
-.signup-login-text {
-  @apply mt-4 text-xs text-slate-700;
-}
-
-.signup-login-link {
-  @apply font-semibold underline;
-}
-/* WRAPPER */
-.signup-wrapper {
-  @apply min-h-screen bg-slate-100 flex items-center justify-center px-4;
-}
-
-/* CARD MARE */
-.signup-card {
+/* Card mare, reutilizabil pentru auth / forms */
+.ui-card-xl {
   @apply relative w-full max-w-md
     rounded-[2.75rem] border-[4px] border-slate-900 bg-white
     px-10 pt-14 pb-10 shadow-[8px_8px_0_0_rgba(15,23,42,1)];
 }
 
-/* HEADER REGISTER ÎN INTERIOR */
-.signup-header {
+/* Header rotunjit în interiorul cardului */
+.ui-card-header {
   @apply relative mx-auto mb-6 flex w-max items-center justify-center
     px-10 py-2 rounded-full border-[4px] border-slate-900 bg-white
     shadow-[6px_6px_0_0_rgba(15,23,42,1)];
 }
 
-.signup-header-highlight {
+.ui-card-header-highlight {
   @apply absolute inset-x-3 bottom-1 h-2 rounded-full bg-amber-300 -z-10;
 }
 
-.signup-header-text {
+.ui-card-header-title {
   @apply text-2xl font-black tracking-[0.35em] uppercase text-slate-900;
 }
 
-/* Liniile decorative de sus */
-.signup-top-lines {
+/* Linii decorative de sus */
+.ui-card-lines {
   @apply mb-6 mt-2;
 }
 
-.signup-line-black {
+.ui-card-line-main {
   @apply h-1.5 w-32 rounded-full bg-slate-900;
 }
 
-.signup-line-yellow {
+.ui-card-line-accent {
   @apply mt-1 h-1 w-40 rounded-full bg-amber-300;
 }
 
-/* Linia verticală */
-.signup-vertical-line {
+/* Linie verticală decorativă în dreapta */
+.ui-card-divider-vertical {
   @apply pointer-events-none absolute top-32 right-16 bottom-20
     border-l-4 border-dashed border-amber-300;
 }
 
-/* LABEL-URI */
-.signup-label {
+/* Label mic, uppercase – bun pentru orice form */
+.ui-label-sm {
   @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-900 mb-1;
 }
 
-/* FORM */
-.signup-form {
+/* Stack vertical între câmpuri de formular */
+.ui-form-stack {
   @apply space-y-5;
 }
 
-/* BUTON */
-.signup-btn-container {
+/* Zona de acțiuni (butoane) la finalul cardului */
+.ui-card-actions {
   @apply mt-4 flex justify-end;
 }
 
-.signup-btn {
+/* Buton primar negru, reutilizabil */
+.ui-btn-primary {
   @apply bg-slate-900 text-amber-200;
 }
 
-/* TEXT LOGIN */
-.signup-login-text {
+/* Text mic, muted – ex. „Already have an account?” */
+.ui-text-muted-xs {
   @apply mt-6 text-xs text-slate-700;
 }
 
-.signup-login-link {
+/* Link cu underline – reuse everywhere */
+.ui-link-underline {
   @apply font-semibold underline;
 }

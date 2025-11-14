@@ -8,64 +8,86 @@ export default function Signup() {
   }
 
   return (
-    <main className="signup-wrapper">
-      <div className="signup-card">
-        
+    <main className="ui-page-center">
+      <div className="ui-card-xl">
         {/* HEADER REGISTER ÎN CARD */}
-        <div className="signup-header">
-          <span className="signup-header-highlight" />
-          <span className="signup-header-text">REGISTER</span>
+        <div className="ui-card-header">
+          <span className="ui-card-header-highlight" />
+          <span className="ui-card-header-title">REGISTER</span>
         </div>
 
-        {/* linii decorative */}
-        <div className="signup-top-lines">
-          <div className="signup-line-black"></div>
-          <div className="signup-line-yellow"></div>
+        {/* linii decorative sus */}
+        <div className="ui-card-lines">
+          <div className="ui-card-line-main" />
+          <div className="ui-card-line-accent" />
         </div>
 
-        {/* linie verticală */}
-        <div className="signup-vertical-line"></div>
+        {/* linia verticală decorativă */}
+        <div className="ui-card-divider-vertical" />
 
         {/* FORMULAR */}
-        <form className="signup-form" onSubmit={handleSubmit}>
+        <form className="ui-form-stack" onSubmit={handleSubmit}>
           <div>
-            <label className="signup-label">Name</label>
+            <label className="ui-label-sm">Name</label>
             <div className="nb-input-wrapper">
-              <input type="text" className="nb-input" placeholder="Your full name" />
+              <input
+                type="text"
+                className="nb-input"
+                placeholder="Your full name"
+                required
+              />
             </div>
           </div>
 
           <div>
-            <label className="signup-label">Email</label>
+            <label className="ui-label-sm">Email</label>
             <div className="nb-input-wrapper">
-              <input type="email" className="nb-input" placeholder="you@example.com" />
+              <input
+                type="email"
+                className="nb-input"
+                placeholder="you@example.com"
+                required
+              />
             </div>
           </div>
 
           <div>
-            <label className="signup-label">Password</label>
+            <label className="ui-label-sm">Password</label>
             <div className="nb-input-wrapper">
-              <input type="password" className="nb-input" placeholder="••••••••" />
+              <input
+                type="password"
+                className="nb-input"
+                placeholder="••••••••"
+                required
+              />
             </div>
           </div>
 
           <div>
-            <label className="signup-label">Confirm password</label>
+            <label className="ui-label-sm">Confirm password</label>
             <div className="nb-input-wrapper">
-              <input type="password" className="nb-input" placeholder="Repeat password" />
+              <input
+                type="password"
+                className="nb-input"
+                placeholder="Repeat password"
+                required
+              />
             </div>
           </div>
 
-          <div className="signup-btn-container">
-            <button type="submit" className="nb-btn signup-btn">Create account</button>
+          <div className="ui-card-actions">
+            <button type="submit" className="nb-btn ui-btn-primary">
+              Create account
+            </button>
           </div>
         </form>
 
-        <p className="signup-login-text">
+        <p className="ui-text-muted-xs">
           Already have an account?{" "}
-          <Link to="/login" className="signup-login-link">Log in</Link>
+          <Link to="/login" className="ui-link-underline">
+            Log in
+          </Link>
         </p>
-
       </div>
     </main>
   );
