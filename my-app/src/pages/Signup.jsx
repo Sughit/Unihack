@@ -1,90 +1,113 @@
-// src/pages/Signup.jsx
-import React from "react";
+import { useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
 
 export default function Signup() {
-  function handleSubmit(e) {
+  const { loginWithRedirect, isLoading } = useAuth0();
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    pass: "",
+    pass2: "",
+  });
+
+  function onChange(e) {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+  }
+
+  async function onSubmit(e) {
     e.preventDefault();
+
+    // aici poți păstra validările tale de bază (parole egale, email valid etc.)
+    if (!form.email) return;
+    if (form.pass !== form.pass2) return;
+
+    // trimitem utilizatorul în Universal Login, cu email precompletat
+    await loginWithRedirect({
+      authorizationParams: {
+        screen_hint: "signup",
+        login_hint: form.email,
+      },
+    });
   }
 
   return (
-    <main className="ui-page-center">
-      <div className="ui-card-xl">
-        {/* HEADER REGISTER ÎN CARD */}
-        <div className="ui-card-header">
-          <span className="ui-card-header-highlight" />
-          <span className="ui-card-header-title">REGISTER</span>
+    <main className="signup-wrapper">
+      <div className="signup-card">
+        {/* HEADER INTERN exact cum îl ai deja */}
+        <div className="signup-header">
+          <span className="signup-header-highlight" />
+          <span className="signup-header-text">REGISTER</span>
         </div>
 
-        {/* linii decorative sus */}
-        <div className="ui-card-lines">
-          <div className="ui-card-line-main" />
-          <div className="ui-card-line-accent" />
+        <div className="signup-top-lines">
+          <div className="signup-line-black" />
+          <div className="signup-line-yellow" />
         </div>
 
-        {/* linia verticală decorativă */}
-        <div className="ui-card-divider-vertical" />
+        <div className="signup-vertical-line" />
 
-        {/* FORMULAR */}
-        <form className="ui-form-stack" onSubmit={handleSubmit}>
+        {/* FORMULARUL TĂU */}
+        <form className="signup-form" onSubmit={onSubmit}>
           <div>
-            <label className="ui-label-sm">Name</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="text"
-                className="nb-input"
-                placeholder="‎ ‎ Your full name"
-                required
-              />
-            </div>
+            <label className="signup-label">Name</label>
+            <input
+              type="text"
+              name="name"
+              className="nb-input"
+              value={form.name}
+              onChange={onChange}
+            />
           </div>
 
           <div>
-            <label className="ui-label-sm">Email</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="email"
-                className="nb-input"
-                placeholder="‎ ‎ you@example.com"
-                required
-              />
-            </div>
+            <label className="signup-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="nb-input"
+              value={form.email}
+              onChange={onChange}
+            />
           </div>
 
           <div>
-            <label className="ui-label-sm">Password</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="password"
-                className="nb-input"
-                placeholder="‎ ‎ ••••••••"
-                required
-              />
-            </div>
+            <label className="signup-label">Password</label>
+            <input
+              type="password"
+              name="pass"
+              className="nb-input"
+              value={form.pass}
+              onChange={onChange}
+            />
           </div>
 
           <div>
-            <label className="ui-label-sm">Confirm password</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="password"
-                className="nb-input"
-                placeholder="‎ ‎ Repeat password"
-                required
-              />
-            </div>
+            <label className="signup-label">Confirm password</label>
+            <input
+              type="password"
+              name="pass2"
+              className="nb-input"
+              value={form.pass2}
+              onChange={onChange}
+            />
           </div>
 
-          <div className="ui-card-actions">
-            <button type="submit" className="nb-btn ui-btn-primary">
-              Create account
+          <div className="signup-btn-container">
+            <button
+              type="submit"
+              className="nav-btn nav-btn-primary signup-btn"
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : "Create account"}
             </button>
           </div>
         </form>
 
-        <p className="ui-text-muted-xs">
+        <p className="signup-login-text">
           Already have an account?{" "}
-          <Link to="/login" className="ui-link-underline">
+          <Link to="/login" className="signup-login-link">
             Log in
           </Link>
         </p>

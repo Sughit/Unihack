@@ -1,273 +1,120 @@
-@layer components {
-  /* LOGO BOX */
-  .nb-logo-box {
-    @apply flex h-10 w-10 items-center justify-center rounded-2xl
-      bg-yellow-300 border-4 border-black text-lg font-black
-      shadow-[4px_4px_0_0_rgba(15,23,42,1)];
-  }
-
-  /* CARD DE BAZĂ NEOBRUTALISTĂ */
-  .nb-card {
-    @apply relative rounded-3xl border-4 border-black
-      bg-yellow-300 p-5 md:p-6
-      shadow-[7px_7px_0_0_rgba(15,23,42,1)];
-  }
-
-  .nb-section-title {
-    @apply text-lg md:text-xl font-black tracking-tight uppercase;
-  }
-
-  .nb-card-title {
-    @apply text-base md:text-lg font-extrabold mb-1;
-  }
-
-  .nb-card-text {
-    @apply text-sm leading-snug text-slate-800;
-  }
-
-  /* BUTOANE */
-  .nb-btn {
-    @apply inline-flex items-center gap-2
-      rounded-2xl border-4 border-black
-      bg-black px-5 py-2.5 text-sm font-semibold
-      text-yellow-300 shadow-[4px_4px_0_0_rgba(15,23,42,1)]
-      transition-transform duration-150
-      hover:-translate-y-0.5 hover:translate-x-0.5
-      active:translate-x-[1px] active:translate-y-[1px]
-      active:shadow-[2px_2px_0_0_rgba(15,23,42,1)];
-  }
-
-  .nb-btn-ghost {
-    @apply inline-flex items-center gap-2
-      rounded-2xl border-4 border-black
-      bg-slate-50 px-4 py-2 text-sm font-semibold
-      text-slate-900 shadow-[4px_4px_0_0_rgba(15,23,42,1)]
-      hover:-translate-y-0.5 hover:translate-x-0.5
-      transition-transform duration-150;
-  }
-
-  .nb-btn-small {
-    @apply inline-flex items-center justify-center
-      rounded-2xl border-4 border-black
-      bg-lime-300 px-3 py-1.5 text-xs font-bold
-      shadow-[4px_4px_0_0_rgba(15,23,42,1)]
-      hover:-translate-y-0.5 hover:translate-x-0.5
-      transition-transform duration-150;
-  }
-
-  /* PILLS / TAGS / BADGES */
-  .nb-pill {
-    @apply rounded-2xl border-2 border-black bg-yellow-300
-      px-4 py-1.5 text-xs font-semibold uppercase tracking-wide;
-  }
-
-  .nb-pill-ghost {
-    @apply rounded-2xl border-2 border-black bg-slate-50
-      px-4 py-1.5 text-xs font-semibold uppercase tracking-wide;
-  }
-
-  .nb-tag {
-    @apply inline-flex items-center rounded-2xl border-2 border-black
-      bg-pink-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
-  }
-
-  .nb-badge {
-    @apply inline-flex items-center rounded-2xl border-2 border-black
-      bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
-  }
-
-  .nb-chip {
-    @apply inline-flex items-center rounded-2xl border-2 border-black
-      bg-slate-200 px-3 py-1 text-[11px] font-mono;
-  }
-
-  /* STATS */
-  .nb-stat {
-    @apply flex flex-col justify-between rounded-2xl border-3 border-black
-      bg-yellow-200 px-3 py-2 shadow-[3px_3px_0_0_rgba(15,23,42,1)];
-  }
-
-  .nb-stat-label {
-    @apply text-[10px] uppercase tracking-wide text-slate-800;
-  }
-
-  .nb-stat-value {
-    @apply text-base font-black;
-  }
-
-  /* INPUTURI */
-  .nb-input-wrapper {
-    @apply rounded-2xl border-4 border-black bg-white
-      shadow-[4px_4px_0_0_rgba(15,23,42,1)];
-  }
-
-  .nb-input {
-    @apply w-full rounded-2xl bg-transparent px-3 py-2 text-sm
-      text-slate-900 outline-none placeholder:text-slate-400;
-  }
-
-  /* CODE INLINE */
-  .nb-code {
-    @apply rounded-md bg-slate-800 px-1.5 py-0.5 text-[11px]
-      font-mono text-slate-50;
-  }
-}
-
 @import "tailwindcss";
 
-/* ============================
-   GENERIC UI LAYOUT CLASSES
-=============================== */
-
-.ui-page-center {
-  @apply min-h-screen bg-slate-100 flex items-center justify-center px-4;
+/* Stil de bază (optional, dar util) */
+@layer base {
+  body {
+    @apply bg-slate-100 text-slate-900;
+  }
 }
 
-/* Card mare, reutilizabil pentru auth / forms */
-.ui-card-xl {
-  @apply relative w-full max-w-md
-    rounded-[2.75rem] border-[4px] border-slate-900 bg-white
-    px-10 pt-14 pb-10 shadow-[8px_8px_0_0_rgba(15,23,42,1)];
-}
+/* TOATE CLASELE TALE CUSTOM */
+@layer components {
+  /* SIGNUP / LOGIN LAYOUT */
+  .signup-wrapper {
+    @apply min-h-screen bg-slate-100 flex items-center justify-center px-4;
+  }
 
-/* Header rotunjit în interiorul cardului */
-.ui-card-header {
-  @apply relative mx-auto mb-6 flex w-max items-center justify-center
-    px-10 py-2 rounded-full border-[4px] border-slate-900 bg-white
-    shadow-[6px_6px_0_0_rgba(15,23,42,1)];
-}
+  .signup-card-container {
+    @apply relative w-full max-w-md;
+  }
 
-.ui-card-header-highlight {
-  @apply absolute inset-x-3 bottom-1 h-2 rounded-full bg-amber-300 -z-10;
-}
+  /* CARD MARE */
+  .signup-card {
+    @apply relative w-full max-w-md
+      rounded-[2.75rem] border-[4px] border-slate-900 bg-white
+      px-10 pt-14 pb-10 shadow-[8px_8px_0_0_rgba(15,23,42,1)]
+      overflow-hidden;
+  }
 
-.ui-card-header-title {
-  @apply text-2xl font-black tracking-[0.35em] uppercase text-slate-900;
-}
+  /* HEADER REGISTER / LOGIN ÎN INTERIOR */
+  .signup-header {
+    @apply relative mx-auto mb-6 flex w-max items-center justify-center
+      px-10 py-2 rounded-full border-[4px] border-slate-900 bg-white
+      shadow-[6px_6px_0_0_rgba(15,23,42,1)];
+  }
 
-/* Linii decorative de sus */
-.ui-card-lines {
-  @apply mb-6 mt-2;
-}
+  .signup-header-highlight {
+    @apply absolute inset-x-3 bottom-1 h-2 rounded-full bg-amber-300 -z-10;
+  }
 
-.ui-card-line-main {
-  @apply h-1.5 w-32 rounded-full bg-slate-900;
-}
+  .signup-header-text {
+    @apply text-2xl font-black tracking-[0.35em] uppercase text-slate-900;
+  }
 
-.ui-card-line-accent {
-  @apply mt-1 h-1 w-40 rounded-full bg-amber-300;
-}
+  /* Liniile decorative de sus */
+  .signup-top-lines {
+    @apply mb-6 mt-2;
+  }
 
-/* Linie verticală decorativă în dreapta */
-.ui-card-divider-vertical {
-  @apply pointer-events-none absolute top-32 right-16 bottom-20
-    border-l-4 border-dashed border-amber-300;
-}
+  .signup-line-black {
+    @apply h-1.5 w-32 rounded-full bg-slate-900;
+  }
 
-/* Label mic, uppercase – bun pentru orice form */
-.ui-label-sm {
-  @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-900 mb-1;
-}
+  .signup-line-yellow {
+    @apply mt-1 h-1 w-40 rounded-full bg-amber-300;
+  }
 
-/* Stack vertical între câmpuri de formular */
-.ui-form-stack {
-  @apply space-y-5;
-}
+  /* Linia verticală */
+  .signup-vertical-line {
+    @apply pointer-events-none absolute top-32 right-16 bottom-20
+      border-l-4 border-dashed border-amber-300;
+  }
 
-/* Zona de acțiuni (butoane) la finalul cardului */
-.ui-card-actions {
-  @apply mt-4 flex justify-end;
-}
+  /* LABEL-URI */
+  .signup-label {
+    @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-900 mb-1;
+  }
 
-/* Buton primar negru, reutilizabil */
-.ui-btn-primary {
-  @apply bg-slate-900 text-amber-200;
-}
+  /* FORM */
+  .signup-form {
+    @apply space-y-5;
+  }
 
-/* Text mic, muted – ex. „Already have an account?” */
-.ui-text-muted-xs {
-  @apply mt-6 text-xs text-slate-700;
-}
+  /* BUTON */
+  .signup-btn-container {
+    @apply mt-4 flex justify-end;
+  }
 
-/* Link cu underline – reuse everywhere */
-.ui-link-underline {
-  @apply font-semibold underline;
-}
-/* ============================
-   GENERIC PROFILE / LAYOUT UI
-=============================== */
+  .signup-btn {
+    @apply bg-slate-900 text-amber-200;
+  }
 
-.ui-page-surface {
-  @apply min-h-screen bg-slate-100 flex justify-center px-4 py-10;
-}
+  /* TEXT LOGIN / SIGNUP FOOTER */
+  .signup-login-text {
+    @apply mt-6 text-xs text-slate-700;
+  }
 
-/* container mare (card gri) */
-.ui-layout-card {
-  @apply w-full max-w-5xl bg-slate-200
-    rounded-3xl border-[3px] border-slate-900
-    p-8;
-}
+  .signup-login-link {
+    @apply font-semibold underline;
+  }
 
-/* header cu avatar + titlu */
-.ui-layout-header {
-  @apply flex items-center gap-8 mb-6;
-}
+  /* INPUT GENERIC NEOBRUTALIST (folosit la login/signup) */
+  .nb-input {
+    @apply w-full rounded-2xl border-[3px] border-slate-900 bg-white
+      px-3 py-2 text-sm text-slate-900 outline-none
+      shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+      placeholder:text-slate-400
+      focus:ring-2 focus:ring-amber-300;
+  }
 
-.ui-avatar-circle {
-  @apply h-32 w-32 rounded-full border-[3px] border-slate-900
-    flex items-center justify-center;
-}
+  /* BUTON GENERAL NEOBRUTALIST (folosit la CTA / auth) */
+  .nb-btn {
+    @apply inline-flex items-center justify-center
+      rounded-full border-[4px] border-slate-900
+      bg-slate-900 px-6 py-3
+      text-xs md:text-sm font-semibold uppercase tracking-wide
+      text-amber-200 shadow-[5px_5px_0_0_rgba(15,23,42,1)]
+      leading-none
+      transition-transform duration-150;
+  }
 
-/* „cap” stilizat, doar ca placeholder */
-.ui-avatar-placeholder {
-  @apply block h-16 w-16 rounded-full border-[3px] border-slate-900;
-}
+  .nb-btn:hover {
+    @apply -translate-y-0.5 translate-x-0.5;
+  }
 
-.ui-heading-main {
-  @apply text-4xl font-black tracking-tight;
-}
+  /* NAVBAR */
 
-.ui-heading-sub {
-  @apply text-xl font-semibold text-slate-700;
-}
-
-/* body: sidebar stânga + content dreapta */
-.ui-layout-body {
-  @apply flex mt-2;
-}
-
-/* sidebar vertical */
-.ui-sidebar {
-  @apply w-56 border-[3px] border-slate-900 border-r-0
-    rounded-bl-3xl pt-4 pb-6 px-4;
-}
-
-.ui-sidebar-nav {
-  @apply flex flex-col gap-3;
-}
-
-.ui-sidebar-item {
-  @apply w-full text-left
-    border-[3px] border-slate-900 bg-slate-200
-    px-3 py-2 text-lg font-black capitalize;
-}
-
-.ui-sidebar-item-active {
-  @apply bg-white;
-}
-
-/* zona mare de conținut din dreapta */
-.ui-main-area {
-  @apply flex-1;
-}
-
-.ui-main-panel {
-  @apply h-full min-h-[260px]
-    border-[3px] border-slate-900
-    rounded-tr-3xl px-6 py-4 bg-slate-100;
-}
-
- /* SHELL NAVBAR */
+  /* SHELL NAVBAR */
   .nav-shell {
     @apply sticky top-0 z-40 bg-slate-100/90 backdrop-blur
       border-b-[4px] border-slate-900;
@@ -345,3 +192,4 @@
   .nav-btn:hover {
     @apply -translate-y-0.5 translate-x-0.5;
   }
+}

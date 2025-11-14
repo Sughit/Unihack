@@ -1,70 +1,81 @@
-// src/pages/Signup.jsx
-import React from "react";
+import { useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
 
 export default function Login() {
-  function handleSubmit(e) {
+  const { loginWithRedirect, isLoading } = useAuth0();
+  const [form, setForm] = useState({ email: "", pass: "" });
+
+  function onChange(e) {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+  }
+
+  async function onSubmit(e) {
     e.preventDefault();
+
+    if (!form.email) return;
+
+    await loginWithRedirect({
+      authorizationParams: {
+        login_hint: form.email,
+      },
+    });
   }
 
   return (
-    <main className="ui-page-center">
-      <div className="ui-card-xl">
-        {/* HEADER REGISTER ÎN CARD */}
-        <div className="ui-card-header">
-          <span className="ui-card-header-highlight" />
-          <span className="ui-card-header-title">LOGIN</span>
+    <main className="signup-wrapper">
+      <div className="signup-card">
+        <div className="signup-header">
+          <span className="signup-header-highlight" />
+          <span className="signup-header-text">LOGIN</span>
         </div>
 
-        <div className="ui-card-divider-vertical" />
-        {/* linii decorative sus */}
-        <div className="ui-card-lines">
-          <div className="ui-card-line-main" />
-          <div className="ui-card-line-accent" />
+        <div className="signup-top-lines">
+          <div className="signup-line-black" />
+          <div className="signup-line-yellow" />
         </div>
 
-        {/* linia verticală decorativă */}
+        <div className="signup-vertical-line" />
 
-        {/* FORMULAR */}
-        <form className="ui-form-stack" onSubmit={handleSubmit}>
- 
-
+        <form className="signup-form" onSubmit={onSubmit}>
           <div>
-            <label className="ui-label-sm">Email</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="email"
-                className="nb-input"
-                placeholder="‎ ‎ you@example.com"
-                required
-              />
-            </div>
+            <label className="signup-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="nb-input"
+              value={form.email}
+              onChange={onChange}
+            />
           </div>
 
           <div>
-            <label className="ui-label-sm">Password</label>
-            <div className="nb-input-wrapper">
-              <input
-                type="password"
-                className="nb-input"
-                placeholder="‎ ‎ ••••••••"
-                required
-              />
-            </div>
+            <label className="signup-label">Password</label>
+            <input
+              type="password"
+              name="pass"
+              className="nb-input"
+              value={form.pass}
+              onChange={onChange}
+            />
           </div>
- 
 
-          <div className="ui-card-actions">
-            <button type="submit" className="nb-btn ui-btn-primary">
-              LOG IN
+          <div className="signup-btn-container">
+            <button
+              type="submit"
+              className="nav-btn nav-btn-primary signup-btn"
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : "Login"}
             </button>
           </div>
         </form>
 
-        <p className="ui-text-muted-xs">
-          You don't have an account?{" "}
-          <Link to="/signup" className="ui-link-underline">
-            Register
+        <p className="signup-login-text">
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="signup-login-link">
+            Create one
           </Link>
         </p>
       </div>
