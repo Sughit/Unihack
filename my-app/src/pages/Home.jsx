@@ -1,4 +1,5 @@
 import React, { usseState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
 export default function Home() {
 
@@ -47,12 +48,12 @@ export default function Home() {
 
             {/* CTA buttons – folosim nav-btn */}
             <div className="flex flex-wrap items-center gap-3">
-              <button className="nav-btn nav-btn-primary">
+              <Link to="/signup" className="nav-btn nav-btn-primary">
                 Get started
-              </button>
-              <button className="nav-btn nav-btn-outline">
-                View docs
-              </button>
+              </Link>
+              <Link to="/search" className="nav-btn nav-btn-outline">
+                Search
+              </Link>
             </div>
 
             {/* Linie verticală decorativă, ca la signup-vertical-line */}
