@@ -192,7 +192,8 @@
 /* Link cu underline – reuse everywhere */
 .ui-link-underline {
   @apply font-semibold underline;
-}/* ============================
+}
+/* ============================
    GENERIC PROFILE / LAYOUT UI
 =============================== */
 
@@ -200,11 +201,11 @@
   @apply min-h-screen bg-slate-100 flex justify-center px-4 py-10;
 }
 
-/* container mare (card gri) – neo-brutalist */
+/* container mare (card gri) */
 .ui-layout-card {
-  @apply w-full max-w-7xl bg-slate-200
-    rounded-3xl border-[4px] border-slate-900
-    p-8 shadow-[10px_10px_0_0_rgba(15,23,42,1)];
+  @apply w-full max-w-5xl bg-slate-200
+    rounded-3xl border-[3px] border-slate-900
+    p-8;
 }
 
 /* header cu avatar + titlu */
@@ -212,22 +213,22 @@
   @apply flex items-center gap-8 mb-6;
 }
 
-/* Avatar: cerc cu umbră groasă */
 .ui-avatar-circle {
-  @apply h-40 w-40               /* ERA h-32 w-32 → acum mai mare */
-    rounded-full border-[4px] border-slate-900
-    flex items-center justify-center
-    overflow-hidden bg-slate-100
-    shadow-[6px_6px_0_0_rgba(15,23,42,1)]
-    ml-4;                        /* îl împinge spre dreapta */
+  @apply h-32 w-32 rounded-full border-[3px] border-slate-900
+    flex items-center justify-center;
+}
+
+/* „cap” stilizat, doar ca placeholder */
+.ui-avatar-placeholder {
+  @apply block h-16 w-16 rounded-full border-[3px] border-slate-900;
 }
 
 .ui-heading-main {
-  @apply text-4xl font-black tracking-tight text-left;
+  @apply text-4xl font-black tracking-tight;
 }
 
 .ui-heading-sub {
-  @apply text-xl font-semibold text-slate-700 text-left;
+  @apply text-xl font-semibold text-slate-700;
 }
 
 /* body: sidebar stânga + content dreapta */
@@ -235,30 +236,22 @@
   @apply flex mt-2;
 }
 
-/* sidebar vertical – cu colțuri și umbră jos-dreapta */
+/* sidebar vertical */
 .ui-sidebar {
-  @apply w-64
-    rounded-bl-3xl rounded-tr-none rounded-tl-none rounded-br-none
-    border-[4px] border-slate-900 border-r-0
-    pt-4 pb-6 px-4 bg-slate-200
-    shadow-[8px_8px_0_0_rgba(15,23,42,1)];
+  @apply w-56 border-[3px] border-slate-900 border-r-0
+    rounded-bl-3xl pt-4 pb-6 px-4;
 }
 
 .ui-sidebar-nav {
   @apply flex flex-col gap-3;
 }
 
-/* buton/tab de meniu – neobrutalist */
 .ui-sidebar-item {
   @apply w-full text-left
-    border-[4px] border-slate-900 bg-slate-200
-    px-3 py-2 text-lg font-black capitalize
-    shadow-[4px_4px_0_0_rgba(15,23,42,1)]
-    transition-transform duration-150
-    hover:-translate-y-0.5 hover:translate-x-0.5;
+    border-[3px] border-slate-900 bg-slate-200
+    px-3 py-2 text-lg font-black capitalize;
 }
 
-/* tab activ – fundal alb, tot cu umbră */
 .ui-sidebar-item-active {
   @apply bg-white;
 }
@@ -268,48 +261,10 @@
   @apply flex-1;
 }
 
-/* panelul de conținut – colțuri rotunjite + shadow */
 .ui-main-panel {
- 
-  @apply flex-1 max-w-[65%];
-    border-[4px] border-slate-900
-    rounded-tr-3xl rounded-br-3xl
-    px-6 py-4 bg-slate-100
-    shadow-[8px_8px_0_0_rgba(15,23,42,1)];
-}
-
-
-/* Label mic pentru form-uri (dacă vei avea și în content) */
-.ui-label-sm {
-  @apply block text-[11px] font-semibold uppercase tracking-wide text-slate-900 mb-1;
-}
-
-/* Stack vertical între câmpuri de formular */
-.ui-form-stack {
-  @apply space-y-5;
-}
-
-/* Zona de acțiuni în carduri (reutilizabil) */
-.ui-card-actions {
-  @apply mt-4 flex justify-end;
-}
-
-/* Buton primar negru, cu shadow neobrutalist */
-.ui-btn-primary {
-  @apply bg-slate-900 text-amber-200
-    shadow-[4px_4px_0_0_rgba(15,23,42,1)]
-    border-[4px] border-slate-900
-    hover:-translate-y-0.5 hover:translate-x-0.5
-    transition-transform duration-150;
-}
-
-/* Text mic + link underline – le poți refolosi oriunde */
-.ui-text-muted-xs {
-  @apply mt-6 text-xs text-slate-700;
-}
-
-.ui-link-underline {
-  @apply font-semibold underline;
+  @apply h-full min-h-[260px]
+    border-[3px] border-slate-900
+    rounded-tr-3xl px-6 py-4 bg-slate-100;
 }
 
  /* SHELL NAVBAR */
