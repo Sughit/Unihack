@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Link } from "react-router-dom";
-
+import React, { usseState, useEffect } from "react";
 export default function Signup() {
+   useEffect(() => {
+      document.body.style.overflow = "hidden";
+  
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, []);
   const { loginWithRedirect, isLoading } = useAuth0();
   const [form, setForm] = useState({
     name: "",
