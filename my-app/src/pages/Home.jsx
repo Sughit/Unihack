@@ -1,4 +1,14 @@
+import React, { usseState, useEffect } from "react";
+
 export default function Home() {
+
+   useEffect(() => {
+      document.body.style.overflow = "hidden";
+  
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, []);
   return (
     <main className="bg-slate-100 min-h-screen">
       <div className="mx-auto max-w-5xl px-4 pt-8 pb-12">
