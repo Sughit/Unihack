@@ -266,3 +266,82 @@
     border-[3px] border-slate-900
     rounded-tr-3xl px-6 py-4 bg-slate-100;
 }
+
+ /* SHELL NAVBAR */
+  .nav-shell {
+    @apply sticky top-0 z-40 bg-slate-100/90 backdrop-blur
+      border-b-[4px] border-slate-900;
+  }
+
+  .nav-inner {
+    @apply mx-auto max-w-5xl flex items-center justify-between
+      px-4 py-3;
+  }
+
+  /* BRAND – inspirat din signup-header */
+  .nav-brand {
+    @apply relative inline-flex items-center gap-3
+      px-6 py-2 rounded-full border-[4px] border-slate-900 bg-white
+      shadow-[6px_6px_0_0_rgba(15,23,42,1)];
+  }
+
+  .nav-brand-highlight {
+    @apply absolute inset-x-3 bottom-1 h-2 rounded-full
+      bg-amber-300 -z-10;
+  }
+
+  .nav-brand-circle {
+    @apply flex h-8 w-8 items-center justify-center
+      rounded-full border-[3px] border-slate-900 bg-amber-300
+      text-sm font-black text-slate-900;
+  }
+
+  .nav-brand-text {
+    @apply text-xs md:text-sm font-black tracking-[0.35em]
+      uppercase text-slate-900;
+  }
+
+  /* LINK-URI MENIU */
+  .nav-links {
+    @apply hidden md:flex items-center gap-3;
+  }
+
+  .nav-link {
+    @apply inline-flex items-center justify-center
+      px-4 py-1.5 rounded-full border-[3px] border-slate-900
+      bg-white text-[11px] md:text-xs font-semibold uppercase
+      tracking-wide text-slate-900
+      shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+      transition-transform duration-150
+      hover:-translate-y-0.5 hover:translate-x-0.5;
+  }
+
+  .nav-link-active {
+    @apply bg-amber-300;
+  }
+
+  /* BUTOANE LOGIN / SIGNUP – inspirate din signup-btn */
+  .nav-actions {
+    @apply flex items-center gap-2;
+  }
+
+  .nav-btn {
+    @apply inline-flex items-center justify-center
+      px-5 py-2 rounded-full border-[4px] border-slate-900
+      text-xs md:text-sm font-semibold uppercase tracking-wide
+      shadow-[5px_5px_0_0_rgba(15,23,42,1)]
+      transition-transform duration-150
+      leading-none;
+  }
+
+  .nav-btn-primary {
+    @apply bg-slate-900 text-amber-200;
+  }
+
+  .nav-btn-outline {
+    @apply bg-white text-slate-900;
+  }
+
+  .nav-btn:hover {
+    @apply -translate-y-0.5 translate-x-0.5;
+  }
