@@ -1,1 +1,116 @@
+@layer components {
+  /* LOGO BOX */
+  .nb-logo-box {
+    @apply flex h-10 w-10 items-center justify-center rounded-2xl
+      bg-yellow-300 border-4 border-black text-lg font-black
+      shadow-[4px_4px_0_0_rgba(15,23,42,1)];
+  }
+
+  /* CARD DE BAZĂ NEOBRUTALISTĂ */
+  .nb-card {
+    @apply relative rounded-3xl border-4 border-black
+      bg-yellow-300 p-5 md:p-6
+      shadow-[7px_7px_0_0_rgba(15,23,42,1)];
+  }
+
+  .nb-section-title {
+    @apply text-lg md:text-xl font-black tracking-tight uppercase;
+  }
+
+  .nb-card-title {
+    @apply text-base md:text-lg font-extrabold mb-1;
+  }
+
+  .nb-card-text {
+    @apply text-sm leading-snug text-slate-800;
+  }
+
+  /* BUTOANE */
+  .nb-btn {
+    @apply inline-flex items-center gap-2
+      rounded-2xl border-4 border-black
+      bg-black px-5 py-2.5 text-sm font-semibold
+      text-yellow-300 shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+      transition-transform duration-150
+      hover:-translate-y-0.5 hover:translate-x-0.5
+      active:translate-x-[1px] active:translate-y-[1px]
+      active:shadow-[2px_2px_0_0_rgba(15,23,42,1)];
+  }
+
+  .nb-btn-ghost {
+    @apply inline-flex items-center gap-2
+      rounded-2xl border-4 border-black
+      bg-slate-50 px-4 py-2 text-sm font-semibold
+      text-slate-900 shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+      hover:-translate-y-0.5 hover:translate-x-0.5
+      transition-transform duration-150;
+  }
+
+  .nb-btn-small {
+    @apply inline-flex items-center justify-center
+      rounded-2xl border-4 border-black
+      bg-lime-300 px-3 py-1.5 text-xs font-bold
+      shadow-[4px_4px_0_0_rgba(15,23,42,1)]
+      hover:-translate-y-0.5 hover:translate-x-0.5
+      transition-transform duration-150;
+  }
+
+  /* PILLS / TAGS / BADGES */
+  .nb-pill {
+    @apply rounded-2xl border-2 border-black bg-yellow-300
+      px-4 py-1.5 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .nb-pill-ghost {
+    @apply rounded-2xl border-2 border-black bg-slate-50
+      px-4 py-1.5 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .nb-tag {
+    @apply inline-flex items-center rounded-2xl border-2 border-black
+      bg-pink-300 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .nb-badge {
+    @apply inline-flex items-center rounded-2xl border-2 border-black
+      bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide;
+  }
+
+  .nb-chip {
+    @apply inline-flex items-center rounded-2xl border-2 border-black
+      bg-slate-200 px-3 py-1 text-[11px] font-mono;
+  }
+
+  /* STATS */
+  .nb-stat {
+    @apply flex flex-col justify-between rounded-2xl border-3 border-black
+      bg-yellow-200 px-3 py-2 shadow-[3px_3px_0_0_rgba(15,23,42,1)];
+  }
+
+  .nb-stat-label {
+    @apply text-[10px] uppercase tracking-wide text-slate-800;
+  }
+
+  .nb-stat-value {
+    @apply text-base font-black;
+  }
+
+  /* INPUTURI */
+  .nb-input-wrapper {
+    @apply rounded-2xl border-4 border-black bg-white
+      shadow-[4px_4px_0_0_rgba(15,23,42,1)];
+  }
+
+  .nb-input {
+    @apply w-full rounded-2xl bg-transparent px-3 py-2 text-sm
+      text-slate-900 outline-none placeholder:text-slate-400;
+  }
+
+  /* CODE INLINE */
+  .nb-code {
+    @apply rounded-md bg-slate-800 px-1.5 py-0.5 text-[11px]
+      font-mono text-slate-50;
+  }
+}
+
 @import "tailwindcss";
