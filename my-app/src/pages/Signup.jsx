@@ -33,7 +33,7 @@ export default function Signup() {
               <input
                 type="text"
                 className="nb-input"
-                placeholder="Your full name"
+                placeholder="‎ ‎ Your full name"
                 required
               />
             </div>
@@ -45,7 +45,7 @@ export default function Signup() {
               <input
                 type="email"
                 className="nb-input"
-                placeholder="you@example.com"
+                placeholder="‎ ‎ you@example.com"
                 required
               />
             </div>
@@ -57,7 +57,7 @@ export default function Signup() {
               <input
                 type="password"
                 className="nb-input"
-                placeholder="••••••••"
+                placeholder="‎ ‎ ••••••••"
                 required
               />
             </div>
@@ -69,7 +69,7 @@ export default function Signup() {
               <input
                 type="password"
                 className="nb-input"
-                placeholder="Repeat password"
+                placeholder="‎ ‎ Repeat password"
                 required
               />
             </div>
