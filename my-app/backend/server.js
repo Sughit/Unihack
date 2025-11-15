@@ -9,6 +9,49 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+async function getOrCreateUserFromToken(auth) {
+  const payload = auth.payload;
+  const email = payload.email;
+  const name = payload.name;
+  const auth0Id = payload.sub;
+
+  if (!email) {
+    throw new Error("Tokenul de Auth0 nu conține email.");
+  }
+
+  // 1. Căutăm user după email
+  let user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  // 2. Dacă nu există -> creăm
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        auth0Id,
+      },
+    });
+    return user;
+  }
+
+  // 3. Dacă există -> sincronizăm ce vine din Auth0
+  const updates = {};
+
+  if (!user.auth0Id && auth0Id) updates.auth0Id = auth0Id;
+  if (name && name !== user.name) updates.name = name;
+
+  if (Object.keys(updates).length > 0) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: updates,
+    });
+  }
+
+  return user;
+}
+
 // test simplu
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Backend + Prisma merg ✅" });
@@ -55,16 +98,46 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// (OPȚIONAL) dacă ai model User în schema.prisma și vrei să-l testezi
-// app.get("/api/users", async (req, res) => {
-//   try {
-//     const users = await prisma.user.findMany();
-//     res.json(users);
-///   } catch (err) {
-//     console.error("GET /api/users error:", err);
-//     res.status(500).json({ error: "Server error" });
-//   }
-// });
+app.get("/api/me", checkJwt, async (req, res) => {
+  try {
+    const user = await getOrCreateUserFromToken(req.auth);
+    res.json(user);
+  } catch (err) {
+    console.error("GET /api/me:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.put("/api/me", checkJwt, async (req, res) => {
+  try {
+    const baseUser = await getOrCreateUserFromToken(req.auth);
+
+    const { username, role, country, domain, languages } = req.body;
+
+    const dataToUpdate = {
+      username: username ?? baseUser.username,
+      role: role ?? baseUser.role,
+      country: country ?? baseUser.country,
+      languages: languages ?? baseUser.languages,
+      domain:
+        role === "ARTIST"
+          ? domain ?? baseUser.domain
+          : role === "BUYER"
+          ? null
+          : baseUser.domain,
+    };
+
+    const updatedUser = await prisma.user.update({
+      where: { id: baseUser.id },
+      data: dataToUpdate,
+    });
+
+    res.json(updatedUser);
+  } catch (err) {
+    console.error("PUT /api/me:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 const PORT = 3001;
 app.listen(PORT, () => {
