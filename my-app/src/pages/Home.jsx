@@ -147,7 +147,14 @@ function Home() {
           {/*   DREAPTA – CHAT (1 COL) */}
           {/* ======================= */}
           <aside className="lg:col-span-1 flex">
-            <div className="relative flex flex-col w-full rounded-[2.75rem] border-[4px] border-slate-900 bg-pink-50 px-6 pt-6 pb-4 shadow-[8px_8px_0_0_rgba(15,23,42,1)]">
+            <div
+              className="
+                relative flex flex-col w-full
+                h-[480px] sm:h-[520px] md:h-[560px]
+                rounded-[2.75rem] border-[4px] border-slate-900 bg-pink-50
+                px-6 pt-6 pb-4 shadow-[8px_8px_0_0_rgba(15,23,42,1)]
+              "
+            >
               {/* header chat */}
               <div className="flex items-center justify-between mb-4">
                 <div className="inline-flex items-center gap-2">
@@ -162,8 +169,15 @@ function Home() {
                 </span>
               </div>
 
-              {/* mesaje */}
-              <div className="flex-1 mb-3 rounded-2xl border-[3px] border-slate-900 bg-white px-3 py-2 overflow-y-auto text-xs text-slate-700 space-y-2">
+              {/* mesaje – scroll intern */}
+              <div
+                className="
+                  flex-1 min-h-0 mb-3
+                  rounded-2xl border-[3px] border-slate-900 bg-white
+                  px-3 py-2 overflow-y-auto
+                  text-xs text-slate-700 space-y-2
+                "
+              >
                 {messages.map((m, idx) => (
                   <div
                     key={idx}
@@ -172,9 +186,7 @@ function Home() {
                     <span
                       className={
                         "inline-block px-2 py-1 rounded-xl border-[2px] border-slate-900 shadow-[3px_3px_0_0_rgba(15,23,42,1)] " +
-                        (m.from === "user"
-                          ? "bg-amber-200"
-                          : "bg-slate-100")
+                        (m.from === "user" ? "bg-amber-200" : "bg-slate-100")
                       }
                     >
                       {m.text}
@@ -213,4 +225,3 @@ function Home() {
 }
 
 export default Home;
-  
