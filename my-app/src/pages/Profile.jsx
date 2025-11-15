@@ -1,15 +1,20 @@
 // src/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+
+// dacă le folosești deja:
 import countries from "../assets/countries.json";
 import domains from "../assets/domains.json";
 import languagesList from "../assets/languages.json";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function Profile() {
   const [tab, setTab] = useState("posts");
-  const [dbUser, setDbUser] = useState(null); // user-ul din baza ta
+
+  const [dbUser, setDbUser] = useState(null);
   const [loadingDbUser, setLoadingDbUser] = useState(true);
+
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // "success" | "error" | null
 
@@ -22,6 +27,10 @@ export default function Profile() {
     email: "",
   });
 
+  // postările mele
+  const [myPosts, setMyPosts] = useState([]);
+  const [loadingMyPosts, setLoadingMyPosts] = useState(false);
+
   const {
     user,
     isLoading,
@@ -29,15 +38,15 @@ export default function Profile() {
     getAccessTokenSilently,
   } = useAuth0();
 
-  // --- numele complet din ID Token (claim custom) + fallback-uri ---
+  // nume complet din claim custom + fallback-uri
   const fullNameFromAuth0 =
-    user?.["https://creon.app/full_name"] || // din Action, full_name din Lock
-    user?.name || // dacă name e setat
-    user?.nickname || // fallback nickname
-    user?.username || // fallback username
-    (user?.email ? user.email.split("@")[0] : ""); // fallback ultim
+    user?.["https://creon.app/full_name"] ||
+    user?.name ||
+    user?.nickname ||
+    user?.username ||
+    (user?.email ? user.email.split("@")[0] : "");
 
-  // --- sincronizare cu baza de date: GET + PUT /api/me (name + email) ---
+  // --- sincronizare user <-> DB ---
   useEffect(() => {
     if (!isAuthenticated || !user) return;
 
@@ -46,8 +55,8 @@ export default function Profile() {
         setLoadingDbUser(true);
         const token = await getAccessTokenSilently();
 
-        // 1. GET /api/me – creează user-ul dacă nu există
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+        // 1. GET /api/me
+        const res = await fetch(`${API_URL}/api/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -58,12 +67,11 @@ export default function Profile() {
 
         let data = await res.json();
 
-        // 2. Trimitem către backend numele complet + email,
-        // fără să stricăm un email existent din DB dacă Auth0 nu trimite niciunul
+        // 2. trimitem nume + email (dacă există)
         const currentEmail = user?.email || data.email || null;
         const currentName = fullNameFromAuth0 || data.name || null;
 
-        const putRes = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+        const putRes = await fetch(`${API_URL}/api/me`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -76,7 +84,7 @@ export default function Profile() {
         });
 
         if (putRes.ok) {
-          data = await putRes.json(); // luăm varianta updatată din DB
+          data = await putRes.json();
         }
 
         setDbUser(data);
@@ -90,7 +98,7 @@ export default function Profile() {
     syncUser();
   }, [isAuthenticated, user, fullNameFromAuth0, getAccessTokenSilently]);
 
-  // --- când avem dbUser, populăm formularul de editare ---
+  // --- populate form când avem dbUser ---
   useEffect(() => {
     if (!dbUser) return;
 
@@ -102,16 +110,44 @@ export default function Profile() {
       country: dbUser.country || "",
       domain: dbUser.domain || "",
       languages: dbUser.languages || "",
-      // dacă Auth0 nu dă email, folosim ce e în DB; altfel, email din Auth0
       email: userEmail || dbUser.email || "",
     });
   }, [dbUser, user]);
 
-  // --- handlers pentru formular ---
+  // --- încarcă postările mele ---
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    async function loadMyPosts() {
+      try {
+        setLoadingMyPosts(true);
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/my-posts`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Error loading my posts:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        setMyPosts(data);
+      } catch (err) {
+        console.error("loadMyPosts error:", err);
+      } finally {
+        setLoadingMyPosts(false);
+      }
+    }
+
+    loadMyPosts();
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+  // --- handlers formular edit ---
   function onChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setSaveStatus(null); // resetăm mesajul când modifici ceva
+    setSaveStatus(null);
   }
 
   async function onSave(e) {
@@ -119,7 +155,6 @@ export default function Profile() {
     if (!dbUser) return;
 
     try {
-      console.log("Submitting profile form...", form);
       setSaving(true);
       setSaveStatus(null);
 
@@ -135,18 +170,14 @@ export default function Profile() {
       if (form.role === "ARTIST") {
         payload.domain = form.domain || null;
       } else if (form.role === "BUYER") {
-        // la cumpărători ștergem domeniul
         payload.domain = null;
       }
 
-      // dacă Auth0 NU are email (ex. login cu Facebook), permitem setarea email-ului manual
       if (!user?.email && form.email) {
         payload.email = form.email;
       }
 
-      console.log("Payload trimis la /api/me (PUT):", payload);
-
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+      const res = await fetch(`${API_URL}/api/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -156,9 +187,9 @@ export default function Profile() {
       });
 
       const text = await res.text();
-      console.log("Răspuns /api/me (PUT):", res.status, text);
 
       if (!res.ok) {
+        console.error("Eroare la /api/me (PUT):", res.status, text);
         setSaveStatus("error");
         return;
       }
@@ -174,7 +205,7 @@ export default function Profile() {
     }
   }
 
-  // --- stare încărcare Auth0 ---
+  // --- loading Auth0 ---
   if (isLoading) {
     return (
       <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center">
@@ -187,7 +218,7 @@ export default function Profile() {
     );
   }
 
-  // dacă nu e logat, nu are ce căuta pe profil
+  // --- not logged in ---
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center">
@@ -200,28 +231,27 @@ export default function Profile() {
     );
   }
 
-  // --- date pentru afișare ---
+  // --- info afișare ---
   const profileImage =
     user?.picture || "https://placehold.co/200x200/png?text=Avatar";
 
   const displayName = dbUser?.name || fullNameFromAuth0 || "Nume necompletat";
 
   const alias =
-    dbUser?.username || // alias din DB, dacă există
+    dbUser?.username ||
     (displayName && displayName.split(" ")[0]) ||
     "User";
 
   const realName = displayName;
 
   const effectiveEmail =
-    user?.email || dbUser?.email || "Email indisponibil (ex. login Facebook)";
+    user?.email || dbUser?.email || "Email indisponibil";
 
   return (
     <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-6xl bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[12px_12px_0_0_#0F172A] p-8">
         {/* HEADER */}
         <header className="flex items-center gap-6 mb-10">
-          {/* FOTO PROFIL */}
           <div className="h-40 w-40 rounded-full overflow-hidden bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0F172A]">
             <img
               src={profileImage}
@@ -230,10 +260,9 @@ export default function Profile() {
             />
           </div>
 
-          {/* TEXT */}
           <div>
             <h1 className="text-5xl font-bold text-slate-900">{realName}</h1>
-            <p className="text-lg text-slate-700 mt-1">{alias}</p>
+            <p className="text-lg text-slate-700 mt-1">({alias})</p>
 
             <p className="text-sm text-slate-600 mt-2">
               Email: <span className="font-mono">{effectiveEmail}</span>
@@ -241,14 +270,14 @@ export default function Profile() {
 
             {loadingDbUser && (
               <p className="text-sm text-slate-500 mt-1">
-                Loading...
+                Sincronizăm datele cu baza de date...
               </p>
             )}
 
             {dbUser && (
               <div className="mt-2 text-sm text-slate-700 space-y-1">
                 <p>
-                  Role:{" "}
+                  Rol:{" "}
                   <span className="font-semibold">
                     {dbUser.role || "nesetat (BUYER / ARTIST)"}
                   </span>
@@ -256,21 +285,21 @@ export default function Profile() {
                 <p>
                   Country:{" "}
                   <span className="font-semibold">
-                    {dbUser.country || "nesetată"}
+                    {dbUser.country || "not set"}
                   </span>
                 </p>
                 {dbUser.role === "ARTIST" && (
                   <p>
                     Domain:{" "}
                     <span className="font-semibold">
-                      {dbUser.domain || "nesetat"}
+                      {dbUser.domain || "not set"}
                     </span>
                   </p>
                 )}
                 <p>
                   Languages:{" "}
                   <span className="font-semibold">
-                    {dbUser.languages || "nespecificate"}
+                    {dbUser.languages || "not specified"}
                   </span>
                 </p>
               </div>
@@ -310,7 +339,6 @@ export default function Profile() {
                 Contact
               </button>
 
-              {/* buton nou: Edit Profile */}
               <button
                 className={`neo-btn ${
                   tab === "edit" ? "neo-btn-active" : ""
@@ -326,10 +354,45 @@ export default function Profile() {
           <div className="flex-1">
             <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 shadow-[10px_10px_0_0_#0F172A] min-h-[300px]">
               {tab === "posts" && (
-                <p className="text-slate-700 text-lg">
-                  Aici apar postările utilizatorului (o să le legăm mai târziu de
-                  baza de date).
-                </p>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                    Your posts
+                  </h2>
+                  {loadingMyPosts ? (
+                    <p className="text-sm text-slate-600">
+                      Loading your posts...
+                    </p>
+                  ) : myPosts.length === 0 ? (
+                    <p className="text-sm text-slate-600">
+                      You don't have any posts yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                      {myPosts.map((post) => (
+                        <article
+                          key={post.id}
+                          className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A]"
+                        >
+                          <h3 className="text-lg font-bold text-slate-900">
+                            {post.title || "(untitled)"}
+                          </h3>
+                          <p className="text-xs text-slate-500 mb-1">
+                            {post.createdAt
+                              ? new Date(post.createdAt).toLocaleString()
+                              : ""}
+                          </p>
+                          <p className="text-sm text-slate-800 mb-2 whitespace-pre-wrap">
+                            {post.content}
+                          </p>
+                          <p className="text-xs text-slate-600">
+                            {post.likeCount} likes · {" "}
+                            {post.commentCount || 0} comments
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               {tab === "creations" && (
@@ -347,8 +410,8 @@ export default function Profile() {
               {tab === "edit" && (
                 <div className="space-y-6">
                   <p className="text-slate-700 text-lg">
-                    Editează-ți profilul public: rol, alias, țară, domeniu și
-                    limbile vorbite.
+                    Edit your public profile: role, alias, country, domain and
+                    spoken languages.
                   </p>
 
                   <form
@@ -370,7 +433,7 @@ export default function Profile() {
                       />
                     </div>
 
-                    {/* Rol */}
+                    {/* Role */}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-semibold text-slate-800">
                         Role
@@ -381,13 +444,13 @@ export default function Profile() {
                         onChange={onChange}
                         className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none bg-white"
                       >
-                        <option value="">Nothing</option>
-                        <option value="BUYER">Buyer (cumpărător)</option>
+                        <option value="">Not set</option>
+                        <option value="BUYER">Buyer</option>
                         <option value="ARTIST">Artist</option>
                       </select>
                     </div>
 
-                    {/* Country - Dropdown from JSON */}
+                    {/* Country */}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-semibold text-slate-800">
                         Country
@@ -409,6 +472,7 @@ export default function Profile() {
                       </select>
                     </div>
 
+                    {/* Domain - only ARTIST */}
                     {form.role === "ARTIST" && (
                       <div className="flex flex-col gap-1">
                         <label className="text-sm font-semibold text-slate-800">
@@ -432,6 +496,7 @@ export default function Profile() {
                       </div>
                     )}
 
+                    {/* Languages */}
                     <div className="flex flex-col gap-1 md:col-span-2">
                       <label className="text-sm font-semibold text-slate-800">
                         Spoken languages
@@ -442,13 +507,14 @@ export default function Profile() {
                         name="languages"
                         value={form.languages ? form.languages.split(",") : []}
                         onChange={(e) => {
-                          const selected = Array.from(e.target.selectedOptions).map(
-                            (opt) => opt.value
-                          );
+                          const selected = Array.from(
+                            e.target.selectedOptions
+                          ).map((opt) => opt.value);
                           setForm((prev) => ({
                             ...prev,
-                            languages: selected.join(",")
+                            languages: selected.join(","),
                           }));
+                          setSaveStatus(null);
                         }}
                         className="border-4 border-slate-900 rounded-xl px-3 py-2 bg-white h-32"
                       >
@@ -460,15 +526,16 @@ export default function Profile() {
                       </select>
 
                       <span className="text-xs text-slate-500">
-                        Hold CTRL (or CMD on Mac) to select multiple languages.
+                        Hold CTRL (or CMD on Mac) to select multiple
+                        languages.
                       </span>
                     </div>
 
-                    {/* Email manual când Auth0 nu are */}
+                    {/* Email manual doar dacă nu vine din Auth0 */}
                     {!user?.email && (
                       <div className="flex flex-col gap-1 md:col-span-2">
                         <label className="text-sm font-semibold text-slate-800">
-                          Email
+                          Email (optional, for contact)
                         </label>
                         <input
                           type="email"
@@ -476,26 +543,25 @@ export default function Profile() {
                           value={form.email}
                           onChange={onChange}
                           className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
-                          placeholder="ex: nume@exemplu.com"
+                          placeholder="ex: name@example.com"
                         />
                         <span className="text-xs text-slate-500">
-                          La unele logări sociale (ex. Facebook) email-ul nu este
-                          trimis către aplicație. Îl poți seta manual aici pentru
-                          contact.
+                          Some social logins (e.g. Facebook) do not provide
+                          your email. You can set it manually here.
                         </span>
                       </div>
                     )}
 
-                    {/* Buton Save + mesaj status */}
+                    {/* Save button + status */}
                     <div className="md:col-span-2 flex items-center justify-between mt-2">
                       {saveStatus === "success" && (
                         <span className="text-sm font-semibold text-green-600">
-                          Profil salvat cu succes ✅
+                          Profile saved successfully ✅
                         </span>
                       )}
                       {saveStatus === "error" && (
                         <span className="text-sm font-semibold text-red-600">
-                          A apărut o eroare la salvare. Verifică consola.
+                          Error while saving profile. Check console.
                         </span>
                       )}
 
@@ -504,7 +570,7 @@ export default function Profile() {
                         disabled={saving}
                         className="px-6 py-2 bg-yellow-300 border-4 border-slate-900 rounded-xl font-bold shadow-[6px_6px_0_0_#0F172A] disabled:opacity-60"
                       >
-                        {saving ? "Se salvează..." : "Salvează profilul"}
+                        {saving ? "Saving..." : "Save profile"}
                       </button>
                     </div>
                   </form>

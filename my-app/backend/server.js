@@ -275,6 +275,34 @@ app.get("/api/feed", checkJwt, async (req, res) => {
   }
 });
 
+app.get("/api/my-posts", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const posts = await prisma.post.findMany({
+      where: { authorId: me.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: { select: { likes: true, comments: true } },
+      },
+    });
+
+    const mapped = posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: p.createdAt,
+      likeCount: p._count.likes,
+      commentCount: p._count.comments,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/my-posts error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
