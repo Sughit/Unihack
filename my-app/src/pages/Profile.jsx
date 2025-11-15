@@ -6,6 +6,17 @@ export default function Profile() {
   const [tab, setTab] = useState("posts");
   const [dbUser, setDbUser] = useState(null); // user-ul din baza ta
   const [loadingDbUser, setLoadingDbUser] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // "success" | "error" | null
+
+  const [form, setForm] = useState({
+    username: "",
+    role: "",
+    country: "",
+    domain: "",
+    languages: "",
+    email: "",
+  });
 
   const {
     user,
@@ -17,10 +28,147 @@ export default function Profile() {
   // --- numele complet din ID Token (claim custom) + fallback-uri ---
   const fullNameFromAuth0 =
     user?.["https://creon.app/full_name"] || // din Action, full_name din Lock
-    user?.name ||                            // dacă name e setat
-    user?.nickname ||                        // fallback nickname
-    user?.username ||                        // fallback username
+    user?.name || // dacă name e setat
+    user?.nickname || // fallback nickname
+    user?.username || // fallback username
     (user?.email ? user.email.split("@")[0] : ""); // fallback ultim
+
+  // --- sincronizare cu baza de date: GET + PUT /api/me (name + email) ---
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    async function syncUser() {
+      try {
+        setLoadingDbUser(true);
+        const token = await getAccessTokenSilently();
+
+        // 1. GET /api/me – creează user-ul dacă nu există
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Eroare la /api/me (GET):", await res.text());
+          return;
+        }
+
+        let data = await res.json();
+
+        // 2. Trimitem către backend numele complet + email,
+        // fără să stricăm un email existent din DB dacă Auth0 nu trimite niciunul
+        const currentEmail = user?.email || data.email || null;
+        const currentName = fullNameFromAuth0 || data.name || null;
+
+        const putRes = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: currentName,
+            email: currentEmail,
+          }),
+        });
+
+        if (putRes.ok) {
+          data = await putRes.json(); // luăm varianta updatată din DB
+        }
+
+        setDbUser(data);
+      } catch (err) {
+        console.error("syncUser error:", err);
+      } finally {
+        setLoadingDbUser(false);
+      }
+    }
+
+    syncUser();
+  }, [isAuthenticated, user, fullNameFromAuth0, getAccessTokenSilently]);
+
+  // --- când avem dbUser, populăm formularul de editare ---
+  useEffect(() => {
+    if (!dbUser) return;
+
+    const userEmail = user?.email || "";
+
+    setForm({
+      username: dbUser.username || "",
+      role: dbUser.role || "",
+      country: dbUser.country || "",
+      domain: dbUser.domain || "",
+      languages: dbUser.languages || "",
+      // dacă Auth0 nu dă email, folosim ce e în DB; altfel, email din Auth0
+      email: userEmail || dbUser.email || "",
+    });
+  }, [dbUser, user]);
+
+  // --- handlers pentru formular ---
+  function onChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setSaveStatus(null); // resetăm mesajul când modifici ceva
+  }
+
+  async function onSave(e) {
+    e.preventDefault();
+    if (!dbUser) return;
+
+    try {
+      console.log("Submitting profile form...", form);
+      setSaving(true);
+      setSaveStatus(null);
+
+      const token = await getAccessTokenSilently();
+
+      const payload = {
+        username: form.username || null,
+        role: form.role || null,
+        country: form.country || null,
+        languages: form.languages || null,
+      };
+
+      if (form.role === "ARTIST") {
+        payload.domain = form.domain || null;
+      } else if (form.role === "BUYER") {
+        // la cumpărători ștergem domeniul
+        payload.domain = null;
+      }
+
+      // dacă Auth0 NU are email (ex. login cu Facebook), permitem setarea email-ului manual
+      if (!user?.email && form.email) {
+        payload.email = form.email;
+      }
+
+      console.log("Payload trimis la /api/me (PUT):", payload);
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      console.log("Răspuns /api/me (PUT):", res.status, text);
+
+      if (!res.ok) {
+        setSaveStatus("error");
+        return;
+      }
+
+      const updated = JSON.parse(text);
+      setDbUser(updated);
+      setSaveStatus("success");
+    } catch (err) {
+      console.error("onSave error:", err);
+      setSaveStatus("error");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   // --- stare încărcare Auth0 ---
   if (isLoading) {
@@ -48,67 +196,21 @@ export default function Profile() {
     );
   }
 
-  // --- sincronizare cu baza de date: GET + PUT /api/me ---
-  useEffect(() => {
-    if (!isAuthenticated || !user) return;
-
-    async function syncUser() {
-      try {
-        setLoadingDbUser(true);
-        const token = await getAccessTokenSilently();
-
-        // 1. GET /api/me – creează user-ul dacă nu există
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          console.error("Eroare la /api/me (GET):", await res.text());
-          return;
-        }
-
-        let data = await res.json();
-
-        // 2. Trimitem către backend numele complet + email, ca să fie salvate sigur în DB
-        const putRes = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name: fullNameFromAuth0 || null,
-            email: user.email || null,
-          }),
-        });
-
-        if (putRes.ok) {
-          data = await putRes.json(); // luăm varianta updatată din DB
-        }
-
-        setDbUser(data);
-      } catch (err) {
-        console.error("syncUser error:", err);
-      } finally {
-        setLoadingDbUser(false);
-      }
-    }
-
-    syncUser();
-  }, [isAuthenticated, user, fullNameFromAuth0, getAccessTokenSilently]);
-
   // --- date pentru afișare ---
   const profileImage =
-    user.picture || "https://placehold.co/200x200/png?text=Avatar";
+    user?.picture || "https://placehold.co/200x200/png?text=Avatar";
 
   const displayName = dbUser?.name || fullNameFromAuth0 || "Nume necompletat";
 
   const alias =
-    dbUser?.username || // dacă vei avea username separat în DB
+    dbUser?.username || // alias din DB, dacă există
     (displayName && displayName.split(" ")[0]) ||
     "User";
 
   const realName = displayName;
+
+  const effectiveEmail =
+    user?.email || dbUser?.email || "Email indisponibil (ex. login Facebook)";
 
   return (
     <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center py-10 px-4">
@@ -130,7 +232,7 @@ export default function Profile() {
             <p className="text-lg text-slate-700 mt-1">({alias})</p>
 
             <p className="text-sm text-slate-600 mt-2">
-              Email: <span className="font-mono">{user.email}</span>
+              Email: <span className="font-mono">{effectiveEmail}</span>
             </p>
 
             {loadingDbUser && (
@@ -203,6 +305,16 @@ export default function Profile() {
               >
                 Contact
               </button>
+
+              {/* buton nou: Edit Profile */}
+              <button
+                className={`neo-btn ${
+                  tab === "edit" ? "neo-btn-active" : ""
+                }`}
+                onClick={() => setTab("edit")}
+              >
+                Edit Profile
+              </button>
             </nav>
           </aside>
 
@@ -226,6 +338,146 @@ export default function Profile() {
                 <p className="text-slate-700 text-lg">
                   Aici va apărea informația de contact (bio, link-uri etc.).
                 </p>
+              )}
+
+              {tab === "edit" && (
+                <div className="space-y-6">
+                  <p className="text-slate-700 text-lg">
+                    Editează-ți profilul public: rol, alias, țară, domeniu și
+                    limbile vorbite.
+                  </p>
+
+                  <form
+                    onSubmit={onSave}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
+                    {/* Alias */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-slate-800">
+                        Alias (opțional)
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={form.username}
+                        onChange={onChange}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                        placeholder="ex: IndieKid99"
+                      />
+                    </div>
+
+                    {/* Rol */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-slate-800">
+                        Rol
+                      </label>
+                      <select
+                        name="role"
+                        value={form.role}
+                        onChange={onChange}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none bg-white"
+                      >
+                        <option value="">Nesetat</option>
+                        <option value="BUYER">Buyer (cumpărător)</option>
+                        <option value="ARTIST">Artist</option>
+                      </select>
+                    </div>
+
+                    {/* Țară */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm font-semibold text-slate-800">
+                        Țară
+                      </label>
+                      <input
+                        type="text"
+                        name="country"
+                        value={form.country}
+                        onChange={onChange}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                        placeholder="ex: România"
+                      />
+                    </div>
+
+                    {/* Domeniu - doar la ARTIST */}
+                    {form.role === "ARTIST" && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-semibold text-slate-800">
+                          Domeniu (doar pentru artiști)
+                        </label>
+                        <input
+                          type="text"
+                          name="domain"
+                          value={form.domain}
+                          onChange={onChange}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                          placeholder="ex: Muzică, Ilustrație, 3D, etc."
+                        />
+                      </div>
+                    )}
+
+                    {/* Limbi */}
+                    <div className="flex flex-col gap-1 md:col-span-2">
+                      <label className="text-sm font-semibold text-slate-800">
+                        Limbi vorbite
+                      </label>
+                      <input
+                        type="text"
+                        name="languages"
+                        value={form.languages}
+                        onChange={onChange}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                        placeholder="ex: ro, en, fr"
+                      />
+                      <span className="text-xs text-slate-500">
+                        Scrie codurile de limbă separate prin virgulă.
+                      </span>
+                    </div>
+
+                    {/* Email manual când Auth0 nu are */}
+                    {!user?.email && (
+                      <div className="flex flex-col gap-1 md:col-span-2">
+                        <label className="text-sm font-semibold text-slate-800">
+                          Email (opțional, pentru contact)
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={form.email}
+                          onChange={onChange}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                          placeholder="ex: nume@exemplu.com"
+                        />
+                        <span className="text-xs text-slate-500">
+                          La unele logări sociale (ex. Facebook) email-ul nu este
+                          trimis către aplicație. Îl poți seta manual aici pentru
+                          contact.
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Buton Save + mesaj status */}
+                    <div className="md:col-span-2 flex items-center justify-between mt-2">
+                      {saveStatus === "success" && (
+                        <span className="text-sm font-semibold text-green-600">
+                          Profil salvat cu succes ✅
+                        </span>
+                      )}
+                      {saveStatus === "error" && (
+                        <span className="text-sm font-semibold text-red-600">
+                          A apărut o eroare la salvare. Verifică consola.
+                        </span>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={saving}
+                        className="px-6 py-2 bg-yellow-300 border-4 border-slate-900 rounded-xl font-bold shadow-[6px_6px_0_0_#0F172A] disabled:opacity-60"
+                      >
+                        {saving ? "Se salvează..." : "Salvează profilul"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
               )}
             </div>
           </div>
