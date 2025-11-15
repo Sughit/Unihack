@@ -39,6 +39,15 @@ export default function Navbar() {
             Search
           </NavLink>
 
+                    <NavLink
+            to="/discover"
+            className={({ isActive }) =>
+              `nav-link ${isActive ? "nav-link-active" : ""}`
+            }
+          >
+            Discover
+          </NavLink>
+
           <NavLink
             to="/contact"
             className={({ isActive }) =>
