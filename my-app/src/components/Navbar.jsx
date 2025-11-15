@@ -6,7 +6,7 @@ import SignupButton from "../utils/signupButton";
 import LogoutButton from "../utils/logoutButton";
 
 export default function Navbar() {
-  const { user, isAuthenticated } = useAuth0();
+  const { isAuthenticated } = useAuth0();
 
   return (
     <header className="nav-shell">
@@ -51,8 +51,6 @@ export default function Navbar() {
 
         {/* RIGHT SIDE */}
         <div className="nav-actions">
-
-          {/* Dacă NU e logat */}
           {!isAuthenticated && (
             <>
               <SignupButton />
@@ -60,24 +58,14 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Dacă ESTE logat */}
           {isAuthenticated && (
-            <div className="nav-user-box">
-
-              <img
-                src={user?.picture}
-                alt="avatar"
-                className="nav-avatar"
-              />
-
-              <span className="nav-email">
-                {user?.email}
-              </span>
-
+            <>
+              <Link to="/profile" className="nav-btn nav-btn-primary">
+                Profile
+              </Link>
               <LogoutButton />
-            </div>
+            </>
           )}
-
         </div>
 
       </div>
