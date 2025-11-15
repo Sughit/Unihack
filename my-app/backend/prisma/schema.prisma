@@ -7,9 +7,24 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model Chat {
+  id      Int  @id @default(autoincrement())
+  userA   User @relation("ChatUserA", fields: [userAId], references: [id])
+  userAId Int
+  userB   User @relation("ChatUserB", fields: [userBId], references: [id])
+  userBId Int
+
+  messages Message[]
+
+  @@unique([userAId, userBId])
+}
+
 model Message {
   id        Int      @id @default(autoincrement())
-  chatName  String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    Int
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  Int
   text      String
   createdAt DateTime @default(now())
 }
@@ -32,11 +47,15 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   avatarUrl  String?
+
+  chatsA Chat[] @relation("ChatUserA")
+  chatsB Chat[] @relation("ChatUserB")
   posts     Post[]
   likes     PostLike[]
   followers Follow[]   @relation("following")
   following Follow[]   @relation("followers")
   comments  Comment[]
+  messages  Message[]
 }
 
 model Post {

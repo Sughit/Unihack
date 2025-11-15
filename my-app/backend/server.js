@@ -272,26 +272,56 @@ app.get("/api/feed", checkJwt, async (req, res) => {
       },
     });
 
+    // luăm toate id-urile de autori din feed
+    const authorIds = [
+      ...new Set(
+        posts
+          .map((p) => p.authorId)
+          .filter((id) => id !== null && id !== undefined && id !== me.id)
+      ),
+    ];
+
+    // toate follow-urile în care EU (me.id) îi urmăresc pe acești autori
+    let followingSet = new Set();
+    if (authorIds.length > 0) {
+      const follows = await prisma.follow.findMany({
+        where: {
+          followerId: me.id,
+          followingId: { in: authorIds },
+        },
+      });
+      followingSet = new Set(follows.map((f) => f.followingId));
+    }
+
     const mapped = posts.map((p) => ({
       id: p.id,
       title: p.title,
       content: p.content,
       createdAt: p.createdAt,
+
+      // like-uri
       likeCount: p._count.likes,
       likedByMe: p.likes.length > 0,
+
+      // date autor (ne trebuie pentru follow + chat)
+      authorId: p.authorId,
+      authorIsMe: p.authorId === me.id,
       authorName:
-        p.author.username ||
-        p.author.name ||
-        p.author.email ||
+        p.author?.username ||
+        p.author?.name ||
+        p.author?.email ||
         "Unknown artist",
+      isFollowing: p.authorId ? followingSet.has(p.authorId) : false,
+
+      // comentarii
       comments: p.comments.map((c) => ({
         id: c.id,
         content: c.content,
         createdAt: c.createdAt,
         authorName:
-          c.author.username ||
-          c.author.name ||
-          c.author.email ||
+          c.author?.username ||
+          c.author?.name ||
+          c.author?.email ||
           "Unknown",
       })),
     }));
@@ -299,7 +329,7 @@ app.get("/api/feed", checkJwt, async (req, res) => {
     res.json(mapped);
   } catch (err) {
     console.error("GET /api/feed error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 
@@ -409,6 +439,176 @@ app.get("/api/artists", async (req, res) => {
   }
 });
 
+async function getOrCreateChat(meId, otherUserId) {
+  const [a, b] = meId < otherUserId ? [meId, otherUserId] : [otherUserId, meId];
+
+  let chat = await prisma.chat.findUnique({
+    where: {
+      userAId_userBId: { userAId: a, userBId: b },
+    },
+  });
+
+  if (!chat) {
+    chat = await prisma.chat.create({
+      data: {
+        userAId: a,
+        userBId: b,
+      },
+    });
+  }
+
+  return chat;
+}
+
+// Cine urmăresc eu (pentru sidebar "Following")
+app.get("/api/following", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const meWithFollowing = await prisma.user.findUnique({
+      where: { id: me.id },
+      include: {
+        following: {
+          include: {
+            following: true, // user-ul pe care îl urmăresc
+          },
+        },
+      },
+    });
+
+    const followingList =
+      meWithFollowing?.following.map((f) => ({
+        id: f.following.id,
+        name:
+          f.following.username ||
+          f.following.name ||
+          f.following.email ||
+          "Unknown",
+        role: f.following.role,
+        country: f.following.country,
+        domain: f.following.domain,
+      })) || [];
+
+    res.json(followingList);
+  } catch (err) {
+    console.error("GET /api/following error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Follow / unfollow user (toggle)
+app.post("/api/users/:id/follow", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const targetId = Number(req.params.id);
+
+    if (Number.isNaN(targetId) || targetId === me.id) {
+      return res.status(400).json({ error: "Invalid target user id" });
+    }
+
+    // există deja?
+    const existing = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: me.id,
+          followingId: targetId,
+        },
+      },
+    });
+
+    if (existing) {
+      await prisma.follow.delete({ where: { id: existing.id } });
+      return res.json({ following: false });
+    } else {
+      await prisma.follow.create({
+        data: {
+          followerId: me.id,
+          followingId: targetId,
+        },
+      });
+      return res.json({ following: true });
+    }
+  } catch (err) {
+    console.error("POST /api/users/:id/follow error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Toate mesajele din chat cu user-ul X
+app.get("/api/chats/:userId/messages", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const otherUserId = Number(req.params.userId);
+
+    if (Number.isNaN(otherUserId) || otherUserId === me.id) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+
+    const chat = await getOrCreateChat(me.id, otherUserId);
+
+    const messages = await prisma.message.findMany({
+      where: { chatId: chat.id },
+      orderBy: { createdAt: "asc" },
+      include: { sender: true },
+    });
+
+    const mapped = messages.map((m) => ({
+      id: m.id,
+      text: m.text,
+      createdAt: m.createdAt,
+      fromMe: m.senderId === me.id,
+      senderName:
+        m.sender.username || m.sender.name || m.sender.email || "Unknown",
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/chats/:userId/messages error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Trimite mesaj către user-ul X (creează chat-ul dacă nu există)
+app.post("/api/chats/:userId/messages", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const otherUserId = Number(req.params.userId);
+    const { text } = req.body;
+
+    if (Number.isNaN(otherUserId) || otherUserId === me.id) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: "Text is required" });
+    }
+
+    const chat = await getOrCreateChat(me.id, otherUserId);
+
+    const message = await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        senderId: me.id,
+        text: text.trim(),
+      },
+      include: { sender: true },
+    });
+
+    res.json({
+      id: message.id,
+      text: message.text,
+      createdAt: message.createdAt,
+      fromMe: true,
+      senderName:
+        message.sender.username ||
+        message.sender.name ||
+        message.sender.email ||
+        "You",
+    });
+  } catch (err) {
+    console.error("POST /api/chats/:userId/messages error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
