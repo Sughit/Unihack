@@ -1,5 +1,5 @@
 // src/pages/Main.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const dummyArtists = [
   "RAPPERUL#tău",
@@ -32,9 +32,16 @@ const dummyChats = [
   { id: 3, name: "SynthWave" },
 ];
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Main() {
   const [activeChat, setActiveChat] = useState(null);
   const [composer, setComposer] = useState({ title: "", content: "" });
+
+  // stare pentru chat
+  const [messages, setMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const [loadingMessages, setLoadingMessages] = useState(false);
 
   function handlePost(e) {
     e.preventDefault();
@@ -46,9 +53,53 @@ export default function Main() {
 
   function handleSendMessage(e) {
     e.preventDefault();
-    // aici vei pune trimiterea reală
-    alert("Mesaj trimis (demo).");
+    if (!activeChat) return;
+    if (!chatInput.trim()) return;
+
+    const payload = {
+      chatName: activeChat.name,
+      text: chatInput,
+    };
+
+    // trimitem în backend
+    fetch(`${API_URL}/api/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((msg) => {
+        // adăugăm mesajul nou în listă
+        setMessages((prev) => [...prev, msg]);
+        setChatInput("");
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Eroare la trimiterea mesajului.");
+      });
   }
+
+  // când se schimbă activeChat, încărcăm mesajele din DB
+  useEffect(() => {
+    if (!activeChat) {
+      setMessages([]);
+      return;
+    }
+
+    setLoadingMessages(true);
+
+    fetch(
+      `${API_URL}/api/messages?chatName=${encodeURIComponent(activeChat.name)}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        setMessages(data);
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+      .finally(() => setLoadingMessages(false));
+  }, [activeChat]);
 
   return (
     <main className="ui-main-shell">
@@ -160,15 +211,30 @@ export default function Main() {
           </header>
 
           <div className="ui-chat-messages">
-            <p className="text-xs text-slate-600">
-              (aici vor apărea mesajele cu {activeChat.name})
-            </p>
+            {loadingMessages ? (
+              <p className="text-xs text-slate-600">Loading messages...</p>
+            ) : messages.length === 0 ? (
+              <p className="text-xs text-slate-600">
+                No messages yet. Say hi!
+              </p>
+            ) : (
+              messages.map((m) => (
+                <div key={m.id} className="ui-chat-message">
+                  <p className="text-sm">{m.text}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {new Date(m.createdAt).toLocaleTimeString()}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
 
           <form onSubmit={handleSendMessage} className="ui-chat-input-row">
             <input
               className="ui-chat-input"
-              placeholder="Send a message..."
+              placeholder={`Message ${activeChat.name}...`}
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
             />
             <button type="submit" className="nb-btn ui-btn-primary">
               Send
