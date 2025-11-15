@@ -200,6 +200,108 @@ app.put("/api/me", checkJwt, async (req, res) => {
   }
 });
 
+app.post("/api/posts", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const { title, content } = req.body;
+
+    if (!title?.trim() && !content?.trim()) {
+      return res.status(400).json({ error: "Title or content required." });
+    }
+
+    const post = await prisma.post.create({
+      data: {
+        authorId: me.id,
+        title: title?.trim() || "",
+        content: content?.trim() || "",
+      },
+    });
+
+    res.json(post);
+  } catch (err) {
+    console.error("POST /api/posts error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/api/feed", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const posts = await prisma.post.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: true,
+        _count: { select: { likes: true } },
+        likes: {
+          where: { userId: me.id },
+          select: { id: true },
+        },
+      },
+    });
+
+    const mapped = posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: p.createdAt,
+      likeCount: p._count.likes,
+      likedByMe: p.likes.length > 0,
+      authorName:
+        p.author.username ||
+        p.author.name ||
+        p.author.email ||
+        "Unknown artist",
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/feed error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const postId = Number(req.params.id);
+    if (Number.isNaN(postId)) {
+      return res.status(400).json({ error: "Invalid post id" });
+    }
+
+    // verificăm dacă există deja like
+    const existing = await prisma.postLike.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId: me.id,
+        },
+      },
+    });
+
+    let liked;
+    if (existing) {
+      await prisma.postLike.delete({ where: { id: existing.id } });
+      liked = false;
+    } else {
+      await prisma.postLike.create({
+        data: {
+          postId,
+          userId: me.id,
+        },
+      });
+      liked = true;
+    }
+
+    const likeCount = await prisma.postLike.count({ where: { postId } });
+
+    res.json({ liked, likeCount });
+  } catch (err) {
+    console.error("POST /api/posts/:id/like error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
   console.log(`Using Gemini model: ${MODEL_ID}`);

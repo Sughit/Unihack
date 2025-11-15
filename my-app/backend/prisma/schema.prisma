@@ -31,4 +31,40 @@ model User {
   languages String?                   // ex: "ro,en"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  posts      Post[]
+  likes      PostLike[]
+  followers  Follow[] @relation("following")
+  following  Follow[] @relation("followers")
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  Int
+  title     String
+  content   String
+  createdAt DateTime  @default(now())
+
+  likes     PostLike[]
+}
+
+model PostLike {
+  id      Int   @id @default(autoincrement())
+  post    Post  @relation(fields: [postId], references: [id])
+  postId  Int
+  user    User  @relation(fields: [userId], references: [id])
+  userId  Int
+
+  @@unique([postId, userId])
+}
+
+model Follow {
+  id           Int   @id @default(autoincrement())
+  follower     User  @relation("followers", fields: [followerId], references: [id])
+  followerId   Int
+  following    User  @relation("following", fields: [followingId], references: [id])
+  followingId  Int
+
+  @@unique([followerId, followingId])
 }
