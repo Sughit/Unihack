@@ -52,8 +52,13 @@ export default function Search() {
           throw new Error(`HTTP ${res.status}`);
         }
         const data = await res.json();
+
         if (!cancelled) {
-          setArtists(data || []);
+          // ⚠️ AICI filtrăm doar userii cu rol ARTIST
+          const onlyArtists = (data || []).filter(
+            (u) => u.role === "ARTIST"
+          );
+          setArtists(onlyArtists);
         }
       } catch (err) {
         console.error("Could not load artists:", err);
@@ -74,7 +79,7 @@ export default function Search() {
 
   const availableCounties = country === "Romania" ? COUNTIES_RO : ["Any"];
 
-  // ====== FILTRARE ARTISTI ======
+  // ====== FILTRARE ARTIȘTI PE BAZĂ DE CONTROALE ======
   const filteredArtists = useMemo(() => {
     return artists.filter((a) => {
       const alias =
@@ -114,7 +119,7 @@ export default function Search() {
 
       // Experience: momentan nu e în modelul User.
       // Dacă adaugi un câmp experience: Int? în Prisma,
-      // îl va trimite automat și va funcționa filtrul.
+      // îl folosești direct aici.
       const expValue =
         typeof a.experience === "number" ? a.experience : 0;
 
@@ -291,10 +296,9 @@ export default function Search() {
                     </p>
 
                     <p className="text-sm text-center mb-4 line-clamp-3">
-                      {/* Deocamdată n-ai descriere în modelul User.
+                      {/* Deocamdată nu ai descriere în modelul User.
                           Poți ulterior adăuga un câmp bio/description în Prisma. */}
-                      {a.bio ||
-                        "No description provided yet."}
+                      {a.bio || "No description provided yet."}
                     </p>
 
                     <button className="mt-auto w-full border-2 border-slate-900 rounded-xl py-2 text-sm font-semibold shadow-[4px_4px_0_0_#0F172A]">
