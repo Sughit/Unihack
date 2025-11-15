@@ -1,6 +1,10 @@
 // src/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import countries from "../assets/countries.json";
+import domains from "../assets/domains.json";
+import languagesList from "../assets/languages.json";
+
 
 export default function Profile() {
   const [tab, setTab] = useState("posts");
@@ -229,7 +233,7 @@ export default function Profile() {
           {/* TEXT */}
           <div>
             <h1 className="text-5xl font-bold text-slate-900">{realName}</h1>
-            <p className="text-lg text-slate-700 mt-1">({alias})</p>
+            <p className="text-lg text-slate-700 mt-1">{alias}</p>
 
             <p className="text-sm text-slate-600 mt-2">
               Email: <span className="font-mono">{effectiveEmail}</span>
@@ -237,34 +241,34 @@ export default function Profile() {
 
             {loadingDbUser && (
               <p className="text-sm text-slate-500 mt-1">
-                Sincronizăm datele cu baza de date...
+                Loading...
               </p>
             )}
 
             {dbUser && (
               <div className="mt-2 text-sm text-slate-700 space-y-1">
                 <p>
-                  Rol:{" "}
+                  Role:{" "}
                   <span className="font-semibold">
                     {dbUser.role || "nesetat (BUYER / ARTIST)"}
                   </span>
                 </p>
                 <p>
-                  Țară:{" "}
+                  Country:{" "}
                   <span className="font-semibold">
                     {dbUser.country || "nesetată"}
                   </span>
                 </p>
                 {dbUser.role === "ARTIST" && (
                   <p>
-                    Domeniu:{" "}
+                    Domain:{" "}
                     <span className="font-semibold">
                       {dbUser.domain || "nesetat"}
                     </span>
                   </p>
                 )}
                 <p>
-                  Limbi:{" "}
+                  Languages:{" "}
                   <span className="font-semibold">
                     {dbUser.languages || "nespecificate"}
                   </span>
@@ -354,7 +358,7 @@ export default function Profile() {
                     {/* Alias */}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-semibold text-slate-800">
-                        Alias (opțional)
+                        Alias (optional)
                       </label>
                       <input
                         type="text"
@@ -369,7 +373,7 @@ export default function Profile() {
                     {/* Rol */}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-semibold text-slate-800">
-                        Rol
+                        Role
                       </label>
                       <select
                         name="role"
@@ -377,59 +381,86 @@ export default function Profile() {
                         onChange={onChange}
                         className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none bg-white"
                       >
-                        <option value="">Nesetat</option>
+                        <option value="">Nothing</option>
                         <option value="BUYER">Buyer (cumpărător)</option>
                         <option value="ARTIST">Artist</option>
                       </select>
                     </div>
 
-                    {/* Țară */}
+                    {/* Country - Dropdown from JSON */}
                     <div className="flex flex-col gap-1">
                       <label className="text-sm font-semibold text-slate-800">
-                        Țară
+                        Country
                       </label>
-                      <input
-                        type="text"
+
+                      <select
                         name="country"
                         value={form.country}
                         onChange={onChange}
-                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
-                        placeholder="ex: România"
-                      />
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 bg-white"
+                      >
+                        <option value="">Select your country</option>
+
+                        {countries.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    {/* Domeniu - doar la ARTIST */}
                     {form.role === "ARTIST" && (
                       <div className="flex flex-col gap-1">
                         <label className="text-sm font-semibold text-slate-800">
-                          Domeniu (doar pentru artiști)
+                          Domain (for artists)
                         </label>
-                        <input
-                          type="text"
+
+                        <select
                           name="domain"
                           value={form.domain}
                           onChange={onChange}
-                          className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
-                          placeholder="ex: Muzică, Ilustrație, 3D, etc."
-                        />
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 bg-white"
+                        >
+                          <option value="">Select your main domain</option>
+
+                          {domains.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     )}
 
-                    {/* Limbi */}
                     <div className="flex flex-col gap-1 md:col-span-2">
                       <label className="text-sm font-semibold text-slate-800">
-                        Limbi vorbite
+                        Spoken languages
                       </label>
-                      <input
-                        type="text"
+
+                      <select
+                        multiple
                         name="languages"
-                        value={form.languages}
-                        onChange={onChange}
-                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
-                        placeholder="ex: ro, en, fr"
-                      />
+                        value={form.languages ? form.languages.split(",") : []}
+                        onChange={(e) => {
+                          const selected = Array.from(e.target.selectedOptions).map(
+                            (opt) => opt.value
+                          );
+                          setForm((prev) => ({
+                            ...prev,
+                            languages: selected.join(",")
+                          }));
+                        }}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 bg-white h-32"
+                      >
+                        {languagesList.map((lang) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.name} ({lang.code})
+                          </option>
+                        ))}
+                      </select>
+
                       <span className="text-xs text-slate-500">
-                        Scrie codurile de limbă separate prin virgulă.
+                        Hold CTRL (or CMD on Mac) to select multiple languages.
                       </span>
                     </div>
 
@@ -437,7 +468,7 @@ export default function Profile() {
                     {!user?.email && (
                       <div className="flex flex-col gap-1 md:col-span-2">
                         <label className="text-sm font-semibold text-slate-800">
-                          Email (opțional, pentru contact)
+                          Email
                         </label>
                         <input
                           type="email"
