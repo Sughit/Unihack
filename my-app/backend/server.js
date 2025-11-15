@@ -33,8 +33,8 @@ async function getOrCreateUserFromToken(authData) {
   }
 
   const payload = authData.payload;
-  const auth0Id = payload.sub;          // ex: "auth0|abc123"
-  const email = payload.email || null;  // poate lipsi din token
+  const auth0Id = payload.sub; // ex: "auth0|abc123"
+  const email = payload.email || null; // poate lipsi din token
   const name = payload.name || null;
 
   if (!auth0Id) {
@@ -43,7 +43,7 @@ async function getOrCreateUserFromToken(authData) {
 
   // Un singur query: dacă există -> update, dacă nu -> create
   const user = await prisma.user.upsert({
-    where: { auth0Id },          // caută după auth0Id (UNIQUE)
+    where: { auth0Id }, // caută după auth0Id (UNIQUE)
     create: {
       auth0Id,
       email,
@@ -162,15 +162,7 @@ app.put("/api/me", checkJwt, async (req, res) => {
   try {
     const baseUser = await getOrCreateUserFromToken(req.auth);
 
-    const {
-      username,
-      role,
-      country,
-      domain,
-      languages,
-      email,
-      name,
-    } = req.body;
+    const { username, role, country, domain, languages, email, name } = req.body;
 
     const updates = {};
 
@@ -200,6 +192,7 @@ app.put("/api/me", checkJwt, async (req, res) => {
   }
 });
 
+// 🔹 Creează post
 app.post("/api/posts", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -224,6 +217,7 @@ app.post("/api/posts", checkJwt, async (req, res) => {
   }
 });
 
+// 🔹 Feed cu postări + like-uri + comentarii
 app.get("/api/feed", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -275,34 +269,7 @@ app.get("/api/feed", checkJwt, async (req, res) => {
   }
 });
 
-app.get("/api/my-posts", checkJwt, async (req, res) => {
-  try {
-    const me = await getOrCreateUserFromToken(req.auth);
-
-    const posts = await prisma.post.findMany({
-      where: { authorId: me.id },
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: { select: { likes: true, comments: true } },
-      },
-    });
-
-    const mapped = posts.map((p) => ({
-      id: p.id,
-      title: p.title,
-      content: p.content,
-      createdAt: p.createdAt,
-      likeCount: p._count.likes,
-      commentCount: p._count.comments,
-    }));
-
-    res.json(mapped);
-  } catch (err) {
-    console.error("GET /api/my-posts error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
+// 🔹 Comentarii la postări
 app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -341,7 +308,7 @@ app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
   }
 });
 
-
+// 🔹 Like / Unlike post
 app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -382,6 +349,32 @@ app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+// 🔹 LISTĂ USERI PENTRU PAGINA SEARCH
+// 🔹 LISTĂ ARTIȘTI pentru pagina Search (public, fără Auth0)
+// 🔹 LISTĂ USERI PENTRU PAGINA SEARCH (cu debug detaliat)
+app.get("/api/artists", async (req, res) => {
+  try {
+    // Test simplu că Prisma și baza de date răspund
+    await prisma.$queryRaw`SELECT 1`;
+
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+
+    // frontend-ul va filtra doar cei cu role === "ARTIST"
+    res.json(users);
+  } catch (err) {
+    console.error("GET /api/artists error:", err);
+
+    // trimitem și detaliile înapoi ca să le poți vedea în browser / Network
+    res.status(500).json({
+      error: "Server error",
+      details: String(err.message || err),
+    });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
