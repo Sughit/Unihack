@@ -4,9 +4,25 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 export default function Profile() {
   const [tab, setTab] = useState("posts");
-  const { user, isLoading, isAuthenticated } = useAuth0();
+  const [dbUser, setDbUser] = useState(null); // user-ul din baza ta
+  const [loadingDbUser, setLoadingDbUser] = useState(true);
 
-  // stare încărcare
+  const {
+    user,
+    isLoading,
+    isAuthenticated,
+    getAccessTokenSilently,
+  } = useAuth0();
+
+  // --- numele complet din ID Token (claim custom) + fallback-uri ---
+  const fullNameFromAuth0 =
+    user?.["https://creon.app/full_name"] || // din Action, full_name din Lock
+    user?.name ||                            // dacă name e setat
+    user?.nickname ||                        // fallback nickname
+    user?.username ||                        // fallback username
+    (user?.email ? user.email.split("@")[0] : ""); // fallback ultim
+
+  // --- stare încărcare Auth0 ---
   if (isLoading) {
     return (
       <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center">
@@ -32,32 +48,67 @@ export default function Profile() {
     );
   }
 
-  // --- date din Auth0 ---
+  // --- sincronizare cu baza de date: GET + PUT /api/me ---
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    async function syncUser() {
+      try {
+        setLoadingDbUser(true);
+        const token = await getAccessTokenSilently();
+
+        // 1. GET /api/me – creează user-ul dacă nu există
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Eroare la /api/me (GET):", await res.text());
+          return;
+        }
+
+        let data = await res.json();
+
+        // 2. Trimitem către backend numele complet + email, ca să fie salvate sigur în DB
+        const putRes = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: fullNameFromAuth0 || null,
+            email: user.email || null,
+          }),
+        });
+
+        if (putRes.ok) {
+          data = await putRes.json(); // luăm varianta updatată din DB
+        }
+
+        setDbUser(data);
+      } catch (err) {
+        console.error("syncUser error:", err);
+      } finally {
+        setLoadingDbUser(false);
+      }
+    }
+
+    syncUser();
+  }, [isAuthenticated, user, fullNameFromAuth0, getAccessTokenSilently]);
+
+  // --- date pentru afișare ---
   const profileImage =
     user.picture || "https://placehold.co/200x200/png?text=Avatar";
 
-  // username / alias - poți schimba logica cum vrei
+  const displayName = dbUser?.name || fullNameFromAuth0 || "Nume necompletat";
+
   const alias =
-    user.nickname ||
-    (user.name ? user.name.split(" ")[0] : user.email?.split("@")[0]) ||
+    dbUser?.username || // dacă vei avea username separat în DB
+    (displayName && displayName.split(" ")[0]) ||
     "User";
 
-  const realName = user.name || user.email || "Nume necompletat";
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    async function loadUser() {
-      const token = await getAccessTokenSilently();
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setUserData(data);
-    }
-
-    loadUser();
-  }, [isAuthenticated]);
+  const realName = displayName;
 
   return (
     <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center py-10 px-4">
@@ -75,15 +126,49 @@ export default function Profile() {
 
           {/* TEXT */}
           <div>
-            <h1 className="text-5xl font-bold text-slate-900">{alias}</h1>
-            <p className="text-lg text-slate-700 mt-1">({realName})</p>
-            {/* dacă vrei direct username/email clar */}
+            <h1 className="text-5xl font-bold text-slate-900">{realName}</h1>
+            <p className="text-lg text-slate-700 mt-1">({alias})</p>
+
             <p className="text-sm text-slate-600 mt-2">
-              Username Auth0: <span className="font-mono">{user.nickname || alias}</span>
-            </p>
-            <p className="text-sm text-slate-600">
               Email: <span className="font-mono">{user.email}</span>
             </p>
+
+            {loadingDbUser && (
+              <p className="text-sm text-slate-500 mt-1">
+                Sincronizăm datele cu baza de date...
+              </p>
+            )}
+
+            {dbUser && (
+              <div className="mt-2 text-sm text-slate-700 space-y-1">
+                <p>
+                  Rol:{" "}
+                  <span className="font-semibold">
+                    {dbUser.role || "nesetat (BUYER / ARTIST)"}
+                  </span>
+                </p>
+                <p>
+                  Țară:{" "}
+                  <span className="font-semibold">
+                    {dbUser.country || "nesetată"}
+                  </span>
+                </p>
+                {dbUser.role === "ARTIST" && (
+                  <p>
+                    Domeniu:{" "}
+                    <span className="font-semibold">
+                      {dbUser.domain || "nesetat"}
+                    </span>
+                  </p>
+                )}
+                <p>
+                  Limbi:{" "}
+                  <span className="font-semibold">
+                    {dbUser.languages || "nespecificate"}
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         </header>
 
