@@ -103,23 +103,57 @@ app.post("/api/chat", async (req, res) => {
 
 // =========== PRISMA MESSAGES ===========
 // ia mesaje pentru un chat (ex: /api/messages?chatName=RAPPERUL%23TAU)
-app.get("/api/messages", async (req, res) => {
-  const { chatName } = req.query;
-
+app.put("/api/me", checkJwt, async (req, res) => {
   try {
-    const where = chatName ? { chatName } : {};
+    const baseUser = await getOrCreateUserFromToken(req.auth);
 
-    const messages = await prisma.message.findMany({
-      where,
-      orderBy: { createdAt: "asc" },
+    const {
+      username,
+      role,
+      country,
+      domain,
+      languages,
+      email,
+      name,
+      avatarUrl, // 🔥 nou
+    } = req.body;
+
+    const updates = {};
+
+    if (username !== undefined) updates.username = username;
+
+    if (role !== undefined) {
+      updates.role = role;
+
+      if (role === "ARTIST") {
+        if (domain !== undefined) updates.domain = domain;
+      } else if (role === "BUYER") {
+        updates.domain = null;
+      }
+    }
+
+    if (country !== undefined) updates.country = country;
+    if (languages !== undefined) updates.languages = languages;
+    if (email !== undefined) updates.email = email;
+    if (name !== undefined) updates.name = name;
+
+    // 🔥 nou – salvăm avatarUrl dacă vine din frontend
+    if (avatarUrl !== undefined) {
+      updates.avatarUrl = avatarUrl;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: baseUser.id },
+      data: updates,
     });
 
-    res.json(messages);
+    res.json(updatedUser);
   } catch (err) {
-    console.error("GET /api/messages error:", err);
+    console.error("PUT /api/me:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // adaugă un mesaj nou
 app.post("/api/messages", async (req, res) => {

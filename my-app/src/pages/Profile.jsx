@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
-// dacă le folosești deja:
 import countries from "../assets/countries.json";
 import domains from "../assets/domains.json";
 import languagesList from "../assets/languages.json";
@@ -25,18 +24,15 @@ export default function Profile() {
     domain: "",
     languages: "",
     email: "",
+    avatarUrl: "", // 🔥 nou
   });
 
   // postările mele
   const [myPosts, setMyPosts] = useState([]);
   const [loadingMyPosts, setLoadingMyPosts] = useState(false);
 
-  const {
-    user,
-    isLoading,
-    isAuthenticated,
-    getAccessTokenSilently,
-  } = useAuth0();
+  const { user, isLoading, isAuthenticated, getAccessTokenSilently } =
+    useAuth0();
 
   // nume complet din claim custom + fallback-uri
   const fullNameFromAuth0 =
@@ -111,6 +107,7 @@ export default function Profile() {
       domain: dbUser.domain || "",
       languages: dbUser.languages || "",
       email: userEmail || dbUser.email || "",
+      avatarUrl: dbUser.avatarUrl || "", // 🔥 nou
     });
   }, [dbUser, user]);
 
@@ -165,6 +162,7 @@ export default function Profile() {
         role: form.role || null,
         country: form.country || null,
         languages: form.languages || null,
+        avatarUrl: form.avatarUrl || null, // 🔥 nou
       };
 
       if (form.role === "ARTIST") {
@@ -233,19 +231,19 @@ export default function Profile() {
 
   // --- info afișare ---
   const profileImage =
-    user?.picture || "https://placehold.co/200x200/png?text=Avatar";
+    form.avatarUrl ||
+    dbUser?.avatarUrl ||
+    user?.picture ||
+    "https://placehold.co/200x200/png?text=Avatar";
 
   const displayName = dbUser?.name || fullNameFromAuth0 || "Nume necompletat";
 
   const alias =
-    dbUser?.username ||
-    (displayName && displayName.split(" ")[0]) ||
-    "User";
+    dbUser?.username || (displayName && displayName.split(" ")[0]) || "User";
 
   const realName = displayName;
 
-  const effectiveEmail =
-    user?.email || dbUser?.email || "Email indisponibil";
+  const effectiveEmail = user?.email || dbUser?.email || "Email indisponibil";
 
   return (
     <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center py-10 px-4">
@@ -278,9 +276,9 @@ export default function Profile() {
               <div className="mt-2 text-sm text-slate-700 space-y-1">
                 <p>
                   Rol:{" "}
-                  <span className="font-semibold">
-                    {dbUser.role || "nesetat (BUYER / ARTIST)"}
-                  </span>
+                    <span className="font-semibold">
+                      {dbUser.role || "nesetat (BUYER / ARTIST)"}
+                    </span>
                 </p>
                 <p>
                   Country:{" "}
@@ -385,7 +383,7 @@ export default function Profile() {
                             {post.content}
                           </p>
                           <p className="text-xs text-slate-600">
-                            {post.likeCount} likes · {" "}
+                            {post.likeCount} likes ·{" "}
                             {post.commentCount || 0} comments
                           </p>
                         </article>
@@ -410,8 +408,8 @@ export default function Profile() {
               {tab === "edit" && (
                 <div className="space-y-6">
                   <p className="text-slate-700 text-lg">
-                    Edit your public profile: role, alias, country, domain and
-                    spoken languages.
+                    Edit your public profile: role, alias, country, domain,
+                    spoken languages and profile image.
                   </p>
 
                   <form
@@ -496,6 +494,40 @@ export default function Profile() {
                       </div>
                     )}
 
+                    {/* Profile image URL */}
+                    <div className="flex flex-col gap-1 md:col-span-2">
+                      <label className="text-sm font-semibold text-slate-800">
+                        Profile image URL
+                      </label>
+                      <input
+                        type="url"
+                        name="avatarUrl"
+                        value={form.avatarUrl}
+                        onChange={onChange}
+                        className="border-4 border-slate-900 rounded-xl px-3 py-2 focus:outline-none"
+                        placeholder="https://example.com/my-avatar.png"
+                      />
+                      <span className="text-xs text-slate-500">
+                        Paste here a direct link to an image (PNG/JPEG). We’ll
+                        use it as your profile picture.
+                      </span>
+
+                      {form.avatarUrl && (
+                        <div className="mt-3 inline-flex items-center gap-3">
+                          <div className="h-16 w-16 rounded-full overflow-hidden border-4 border-slate-900 shadow-[4px_4px_0_0_#0F172A] bg-white">
+                            <img
+                              src={form.avatarUrl}
+                              alt="Preview avatar"
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          <span className="text-xs text-slate-500">
+                            Preview of your new profile image.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* Languages */}
                     <div className="flex flex-col gap-1 md:col-span-2">
                       <label className="text-sm font-semibold text-slate-800">
@@ -526,8 +558,7 @@ export default function Profile() {
                       </select>
 
                       <span className="text-xs text-slate-500">
-                        Hold CTRL (or CMD on Mac) to select multiple
-                        languages.
+                        Hold CTRL (or CMD on Mac) to select multiple languages.
                       </span>
                     </div>
 
