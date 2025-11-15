@@ -29,6 +29,9 @@ export default function Main() {
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
 
+  // comentarii: textul pentru fiecare post
+  const [commentInputs, setCommentInputs] = useState({});
+
   // Încarcă feed-ul de postări din backend
   useEffect(() => {
     if (!isAuthenticated) {
@@ -114,6 +117,7 @@ export default function Main() {
             user?.name ||
             user?.email ||
             "You",
+          comments: [],
         },
         ...prev,
       ]);
@@ -157,6 +161,49 @@ export default function Main() {
       );
     } catch (err) {
       console.error("toggleLike error:", err);
+    }
+  }
+
+  // Adaugă comentariu la un post
+  async function handleAddComment(postId) {
+    const text = (commentInputs[postId] || "").trim();
+    if (!text) return;
+
+    if (!isAuthenticated) {
+      alert("You need to be logged in to comment.");
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`${API_URL}/api/posts/${postId}/comments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: text }),
+      });
+
+      if (!res.ok) {
+        console.error("Error adding comment:", await res.text());
+        return;
+      }
+
+      const newComment = await res.json();
+
+      // adăugăm comentariul local
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === postId
+            ? { ...p, comments: [...(p.comments || []), newComment] }
+            : p
+        )
+      );
+
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+    } catch (err) {
+      console.error("handleAddComment error:", err);
     }
   }
 
@@ -226,13 +273,13 @@ export default function Main() {
             </form>
           </div>
 
-          {/* Feed posts */}
+          {/* Feed posts — înălțime fixă + scroll */}
           <div className="bg-slate-200 border-4 border-slate-900 rounded-3xl p-4 shadow-[8px_8px_0_0_#0F172A]">
             <h2 className="text-xl font-bold text-slate-900 mb-4">
               Feed
             </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
               {loadingPosts ? (
                 <p className="text-sm text-slate-600">Loading feed...</p>
               ) : posts.length === 0 ? (
@@ -258,7 +305,8 @@ export default function Main() {
                       {post.content}
                     </p>
 
-                    <div className="flex items-center gap-4 text-sm">
+                    {/* acțiuni post */}
+                    <div className="flex items-center gap-4 text-sm mb-3">
                       <button
                         type="button"
                         onClick={() => toggleLike(post.id)}
@@ -271,12 +319,62 @@ export default function Main() {
                         {post.likedByMe ? "Unlike" : "Like"} ({post.likeCount})
                       </button>
 
-                      <button
-                        type="button"
-                        className="border-2 border-slate-900 rounded-full px-3 py-1 bg-white text-slate-900 shadow-[3px_3px_0_0_#0F172A]"
-                      >
-                        Comments
-                      </button>
+                      <span className="text-xs text-slate-600">
+                        {post.comments?.length || 0} comments
+                      </span>
+                    </div>
+
+                    {/* comentarii */}
+                    <div className="border-t-2 border-slate-200 pt-2 space-y-2">
+                      <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                        {post.comments && post.comments.length > 0 ? (
+                          post.comments.map((c) => (
+                            <div
+                              key={c.id}
+                              className="text-xs bg-slate-100 border-2 border-slate-900 rounded-xl px-2 py-1"
+                            >
+                              <span className="font-semibold">
+                                {c.authorName}
+                              </span>
+                              <span className="text-[10px] text-slate-500 ml-1">
+                                {c.createdAt
+                                  ? new Date(c.createdAt).toLocaleString()
+                                  : ""}
+                              </span>
+                              <p className="text-[11px] text-slate-800">
+                                {c.content}
+                              </p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[11px] text-slate-500">
+                            No comments yet.
+                          </p>
+                        )}
+                      </div>
+
+                      {/* add comment */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Add a comment..."
+                          value={commentInputs[post.id] || ""}
+                          onChange={(e) =>
+                            setCommentInputs((prev) => ({
+                              ...prev,
+                              [post.id]: e.target.value,
+                            }))
+                          }
+                          className="flex-1 border-2 border-slate-900 rounded-2xl px-2 py-1 text-xs bg-white focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddComment(post.id)}
+                          className="text-xs px-3 py-1 bg-yellow-300 border-2 border-slate-900 rounded-2xl font-bold shadow-[3px_3px_0_0_#0F172A]"
+                        >
+                          Comment
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))

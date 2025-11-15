@@ -237,6 +237,10 @@ app.get("/api/feed", checkJwt, async (req, res) => {
           where: { userId: me.id },
           select: { id: true },
         },
+        comments: {
+          include: { author: true },
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
@@ -252,6 +256,16 @@ app.get("/api/feed", checkJwt, async (req, res) => {
         p.author.name ||
         p.author.email ||
         "Unknown artist",
+      comments: p.comments.map((c) => ({
+        id: c.id,
+        content: c.content,
+        createdAt: c.createdAt,
+        authorName:
+          c.author.username ||
+          c.author.name ||
+          c.author.email ||
+          "Unknown",
+      })),
     }));
 
     res.json(mapped);
@@ -260,6 +274,45 @@ app.get("/api/feed", checkJwt, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const postId = Number(req.params.id);
+    const { content } = req.body;
+
+    if (Number.isNaN(postId)) {
+      return res.status(400).json({ error: "Invalid post id" });
+    }
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Content is required" });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        postId,
+        authorId: me.id,
+        content: content.trim(),
+      },
+      include: { author: true },
+    });
+
+    res.json({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      authorName:
+        comment.author.username ||
+        comment.author.name ||
+        comment.author.email ||
+        "Unknown",
+    });
+  } catch (err) {
+    console.error("POST /api/posts/:id/comments error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
   try {
