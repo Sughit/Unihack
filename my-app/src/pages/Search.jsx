@@ -1,6 +1,7 @@
 // src/pages/Search.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
+import { useNavigate } from "react-router-dom";
 
 // Domenii și țări (le păstrăm hardcodate deocamdată)
 const ALL_DOMAINS = ["Any", "Illustration", "Music", "Video", "Branding"];
@@ -28,6 +29,8 @@ const LANGUAGE_OPTIONS = [
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function Search() {
+  const navigate = useNavigate();
+
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("Any");
   const [expMin, setExpMin] = useState("");
@@ -156,7 +159,8 @@ export default function Search() {
   // ====== FILTRARE ARTIȘTI PE BAZĂ DE CONTROALE ======
   const filteredArtists = useMemo(() => {
     return artists.filter((a) => {
-      const alias = a.username || a.name || a.email || "Unknown artist";
+      const alias =
+        a.username || a.name || a.email || "Unknown artist";
 
       // Search în nume/alias
       if (
@@ -357,6 +361,9 @@ export default function Search() {
 
                 const isFollowing = followingIds.has(a.id);
 
+                // alias pentru URL: folosim username dacă există, altfel id ca fallback
+                const profileAlias = a.username || a.id;
+
                 return (
                   <article
                     key={a.id}
@@ -391,6 +398,7 @@ export default function Search() {
 
                       <button
                         type="button"
+                        onClick={() => navigate(`/user/${profileAlias}`)}
                         className="flex-1 text-xs border-2 border-slate-900 rounded-xl py-2 font-semibold shadow-[4px_4px_0_0_#0F172A] bg-amber-200"
                       >
                         View profile
