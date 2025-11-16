@@ -22,6 +22,15 @@ export default function Main() {
   const [loadingChat, setLoadingChat] = useState(false);
   const [chatInput, setChatInput] = useState("");
 
+  // 🔹 info despre mine (pt rol BUYER/ARTIST)
+  const [me, setMe] = useState(null);
+
+  // 🔹 formular cerere proiect
+  const [requestBudget, setRequestBudget] = useState("");
+  const [requestDeadline, setRequestDeadline] = useState("");
+  const [requestNotes, setRequestNotes] = useState("");
+  const [isSendingRequest, setIsSendingRequest] = useState(false);
+
   // POSTS
   const [composer, setComposer] = useState({ title: "", content: "" });
   const [posts, setPosts] = useState([]);
@@ -53,6 +62,101 @@ export default function Main() {
       });
     }
   }
+
+  async function sendProjectRequest() {
+    if (!activeChatUser) return;
+
+    const trimmedBudget = requestBudget.trim();
+    const trimmedDeadline = requestDeadline.trim();
+
+    if (!trimmedBudget || !trimmedDeadline) {
+      alert("Te rog completează bugetul și termenul.");
+      return;
+    }
+
+    if (!isAuthenticated) {
+      alert("Trebuie să fii autentificat ca să trimiți o cerere.");
+      return;
+    }
+
+    try {
+      setIsSendingRequest(true);
+
+      const token = await getAccessTokenSilently();
+
+      const text = [
+        "📌 PROJECT REQUEST",
+        `Budget: ${trimmedBudget}`,
+        `Deadline: ${trimmedDeadline}`,
+        requestNotes.trim() ? `Details: ${requestNotes.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const res = await fetch(
+        `${API_URL}/api/chats/${activeChatUser.id}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+
+      if (!res.ok) {
+        console.error("Error sending project request:", await res.text());
+        return;
+      }
+
+      const msg = await res.json();
+      setChatMessages((prev) => [...prev, msg]);
+
+      // reset formular
+      setRequestBudget("");
+      setRequestDeadline("");
+      setRequestNotes("");
+    } catch (err) {
+      console.error("sendProjectRequest error:", err);
+      handleAuth0Error(err);
+    } finally {
+      setIsSendingRequest(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setMe(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadMe() {
+      try {
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          console.error("Error loading /api/me:", await res.text());
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) setMe(data);
+      } catch (err) {
+        console.error("loadMe error:", err);
+        // nu spargem tot dacă /api/me dă eroare
+      }
+    }
+
+    loadMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- LOAD FOLLOWING -----
   useEffect(() => {
@@ -582,106 +686,147 @@ async function toggleFollow(userId) {
             </div>
           </div>
         </section>
+        {/* RIGHT — Following / Chats list */}
+        <aside className="w-full lg:w-1/4 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4">
+          <h2 className="text-xl font-bold text-slate-900 mb-3">Chats</h2>
 
-        {/* RIGHT — Recent chats + popup chat */}
-        <aside className="w-full lg:w-1/4 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4 relative">
-            <h2 className="text-xl font-bold text-slate-900 mb-3">Chats</h2>
-            {/* LISTA DE FOLLOWING (chat-uri posibile) */}
-            <div className="mb-4">
-              <p className="text-sm text-slate-600 mb-2">Select someone to chat with:</p>
+          <p className="text-sm text-slate-600 mb-2">Select someone to chat with:</p>
 
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                {following.length === 0 ? (
-                  <p className="text-sm text-slate-500">You follow no one.</p>
-                ) : (
-                  following.map((artist) => (
-                    <button
-                      key={artist.id}
-                      onClick={() => setActiveChatUser({ id: artist.id, name: artist.name })}
-                      className={`w-full flex flex-col items-start bg-white border-4 border-slate-900 rounded-2xl px-3 py-2 shadow-[4px_4px_0_0_#0F172A] text-left ${
-                        activeChatUser?.id === artist.id ? "bg-yellow-200" : ""
-                      }`}
-                    >
-                      <div className="font-semibold text-slate-900">{artist.name}</div>
-                      <div className="text-xs text-slate-600">{artist.domain || artist.role}</div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-          {/* Popup chat */}
-          {activeChatUser && (
-            <div className="hidden lg:block fixed bottom-4 right-4 w-80 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-3 z-50">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-bold text-slate-900">
-                  Chat with {activeChatUser.name}
-                </h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            {following.length === 0 ? (
+              <p className="text-sm text-slate-500">You follow no one.</p>
+            ) : (
+              following.map((artist) => (
                 <button
-                  onClick={() => setActiveChatUser(null)}
-                  className="text-xs border-2 border-slate-900 rounded-full px-2 py-0.5 bg-white"
+                  key={artist.id}
+                  onClick={() =>
+                    setActiveChatUser({ id: artist.id, name: artist.name })
+                  }
+                  className={`w-full flex flex-col items-start bg-white border-4 border-slate-900 rounded-2xl px-3 py-2 shadow-[4px_4px_0_0_#0F172A] text-left ${
+                    activeChatUser?.id === artist.id ? "bg-yellow-200" : ""
+                  }`}
                 >
-                  X
+                  <div className="font-semibold text-slate-900">{artist.name}</div>
+                  <div className="text-xs text-slate-600">
+                    {artist.domain || artist.role}
+                  </div>
                 </button>
-              </div>
-
-              <div className="h-40 bg-white border-2 border-slate-900 rounded-2xl mb-2 px-2 py-1 text-xs text-slate-600 overflow-y-auto">
-                {loadingChat ? (
-                  <p>Loading...</p>
-                ) : chatMessages.length === 0 ? (
-                  <p className="text-[11px] text-slate-500">
-                    No messages yet. Say hi!
-                  </p>
-                ) : (
-                  chatMessages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex mb-1 ${
-                        m.fromMe ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
-                          m.fromMe ? "bg-yellow-300" : "bg-slate-100"
-                        }`}
-                      >
-                        {!m.fromMe && (
-                          <div className="text-[9px] font-semibold text-slate-700">
-                            {m.senderName}
-                          </div>
-                        )}
-                        <div className="text-[11px] text-slate-800">
-                          {m.text}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Type a message..."
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      sendChatMessage();
-                    }
-                  }}
-                  className="flex-1 border-2 border-slate-900 rounded-2xl px-2 py-1 text-sm bg-white focus:outline-none"
-                />
-                <button
-                  onClick={sendChatMessage}
-                  className="text-xs px-3 py-1 bg-yellow-300 border-2 border-slate-900 rounded-2xl font-bold shadow-[3px_3px_0_0_#0F172A]"
-                >
-                  Send
-                </button>
-              </div>
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </aside>
+        {/* Popup chat plutitor jos-dreapta */}
+        {activeChatUser && (
+          <div className="hidden lg:block fixed bottom-4 right-4 w-80 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-3 z-50">
+            {/* Header chat */}
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-slate-900">
+                Chat with {activeChatUser.name}
+              </h3>
+              <button
+                onClick={() => setActiveChatUser(null)}
+                className="text-xs border-2 border-slate-900 rounded-full px-2 py-0.5 bg-white"
+              >
+                X
+              </button>
+            </div>
+
+            {/* BUTON CERERE PROIECT + form mic (doar pentru BUYER) */}
+            {me?.role === "BUYER" && (
+              <details className="mb-2 border-2 border-slate-900 rounded-2xl bg-yellow-50 px-2 py-1 text-[11px]">
+                <summary className="cursor-pointer font-semibold text-slate-900 select-none">
+                  Project request
+                </summary>
+
+                <div className="mt-1 space-y-1">
+                  <input
+                    type="text"
+                    placeholder="Budget (ex: 200 EUR)"
+                    value={requestBudget}
+                    onChange={(e) => setRequestBudget(e.target.value)}
+                    className="w-full border-2 border-slate-900 rounded-xl px-2 py-1 text-[11px] bg-white focus:outline-none"
+                  />
+                  <input
+                    type="date"
+                    value={requestDeadline}
+                    onChange={(e) => setRequestDeadline(e.target.value)}
+                    className="w-full border-2 border-slate-900 rounded-xl px-2 py-1 text-[11px] bg-white focus:outline-none"
+                  />
+                  <textarea
+                    placeholder="Short brief / details (optional)"
+                    value={requestNotes}
+                    onChange={(e) => setRequestNotes(e.target.value)}
+                    className="w-full border-2 border-slate-900 rounded-xl px-2 py-1 text-[11px] bg-white resize-none focus:outline-none"
+                    rows={2}
+                  />
+                  <button
+                    onClick={sendProjectRequest}
+                    disabled={isSendingRequest}
+                    className="w-full text-[11px] px-2 py-1 bg-yellow-300 border-2 border-slate-900 rounded-2xl font-bold shadow-[2px_2px_0_0_#0F172A] disabled:opacity-60"
+                  >
+                    {isSendingRequest ? "Sending..." : "Send request"}
+                  </button>
+                </div>
+              </details>
+            )}
+
+            {/* Mesaje */}
+            <div className="h-40 bg-white border-2 border-slate-900 rounded-2xl mb-2 px-2 py-1 text-xs text-slate-600 overflow-y-auto">
+              {loadingChat ? (
+                <p>Loading...</p>
+              ) : chatMessages.length === 0 ? (
+                <p className="text-[11px] text-slate-500">
+                  No messages yet. Say hi!
+                </p>
+              ) : (
+                chatMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex mb-1 ${
+                      m.fromMe ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
+                        m.fromMe ? "bg-yellow-300" : "bg-slate-100"
+                      }`}
+                    >
+                      {!m.fromMe && (
+                        <div className="text-[9px] font-semibold text-slate-700">
+                          {m.senderName}
+                        </div>
+                      )}
+                      <div className="text-[11px] text-slate-800">{m.text}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Input mesaje */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendChatMessage();
+                  }
+                }}
+                className="flex-1 border-2 border-slate-900 rounded-2xl px-2 py-1 text-sm bg-white focus:outline-none"
+              />
+              <button
+                onClick={sendChatMessage}
+                className="text-xs px-3 py-1 bg-yellow-300 border-2 border-slate-900 rounded-2xl font-bold shadow-[3px_3px_0_0_#0F172A]"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        )}        
       </div>
     </main>
   );
