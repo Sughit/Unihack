@@ -263,44 +263,45 @@ export default function Main() {
   }
 
   // ----- FOLLOW -----
-  async function toggleFollow(userId) {
-    if (!isAuthenticated) {
-      alert("You need to be logged in to follow people.");
+async function toggleFollow(userId) {
+  if (!isAuthenticated) {
+    alert("You need to be logged in to follow people.");
+    return;
+  }
+  try {
+    const token = await getAccessTokenSilently();
+    const res = await fetch(`${API_URL}/api/users/${userId}/follow`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      console.error("Error toggling follow:", await res.text());
       return;
     }
-    try {
-      const token = await getAccessTokenSilently();
-      const res = await fetch(`${API_URL}/api/users/${userId}/follow`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
 
-      if (!res.ok) {
-        console.error("Error toggling follow:", await res.text());
-        return;
-      }
+    const data = await res.json(); // { following: true/false }
 
-      const data = await res.json(); // { following: true/false }
+    // updatăm isFollowing pe posturile din feed
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.authorId === userId ? { ...p, isFollowing: data.following } : p
+      )
+    );
 
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.authorId === userId ? { ...p, isFollowing: data.following } : p
-        )
-      );
-
-      // reîncarcăm lista Following
-      const token2 = await getAccessTokenSilently();
-      const res2 = await fetch(`${API_URL}/api/following`, {
-        headers: { Authorization: `Bearer ${token2}` },
-      });
-      if (res2.ok) {
-        setFollowing(await res2.json());
-      }
-    } catch (err) {
-      console.error("toggleFollow error:", err);
-      handleAuth0Error(err);
+    // reîncarcăm lista Following din backend
+    const token2 = await getAccessTokenSilently();
+    const res2 = await fetch(`${API_URL}/api/following`, {
+      headers: { Authorization: `Bearer ${token2}` },
+    });
+    if (res2.ok) {
+      setFollowing(await res2.json());
     }
+  } catch (err) {
+    console.error("toggleFollow error:", err);
+    handleAuth0Error(err);
   }
+}
 
   // ----- CHAT LOAD -----
   useEffect(() => {

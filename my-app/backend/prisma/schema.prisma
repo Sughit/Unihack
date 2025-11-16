@@ -1,57 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-model Chat {
-  id      Int  @id @default(autoincrement())
-  userA   User @relation("ChatUserA", fields: [userAId], references: [id])
-  userAId Int
-  userB   User @relation("ChatUserB", fields: [userBId], references: [id])
-  userBId Int
-
-  messages Message[]
-
-  @@unique([userAId, userBId])
-}
-
-model Message {
-  id        Int      @id @default(autoincrement())
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  chatId    Int
-  sender    User     @relation(fields: [senderId], references: [id])
-  senderId  Int
-  text      String
-  createdAt DateTime @default(now())
-}
-
-enum UserRole {
-  BUYER
-  ARTIST
-}
-
 model User {
-  id       Int       @id @default(autoincrement())
-  auth0Id  String    @unique // sub de la Auth0
-  email    String?   @unique
-  name     String? // numele de la Auth0
-  username String? // completat de utilizator
-  role     UserRole? // BUYER sau ARTIST
-
-  country       String? // țara de origine
-  domain        String? // doar pt ARTIST
-  languages     String? // ex: "ro,en"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  avatarUrl     String?
+  id        Int       @id @default(autoincrement())
+  auth0Id   String    @unique // sub de la Auth0
+  email     String?   @unique
+  name      String? // numele de la Auth0
+  username  String? // completat de utilizator
+  role      UserRole? // BUYER sau ARTIST
+  country   String? // țara de origine
+  domain    String? // doar pt ARTIST
+  languages String? // ex: "ro,en"
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  avatarUrl  String?
   walletAddress String?
 
-  chatsA    Chat[]      @relation("ChatUserA")
-  chatsB    Chat[]      @relation("ChatUserB")
+  chatsA Chat[] @relation("ChatUserA")
+  chatsB Chat[] @relation("ChatUserB")
   posts     Post[]
   likes     PostLike[]
   followers Follow[]    @relation("following")
@@ -71,43 +43,65 @@ model UserBadge {
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  author    User     @relation(fields: [authorId], references: [id])
+  id        Int        @id @default(autoincrement())
   authorId  Int
   title     String
   content   String
-  createdAt DateTime @default(now())
-
-  likes    PostLike[]
-  comments Comment[]
-}
-
-model PostLike {
-  id     Int  @id @default(autoincrement())
-  post   Post @relation(fields: [postId], references: [id])
-  postId Int
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-
-  @@unique([postId, userId])
+  createdAt DateTime   @default(now())
+  comments  Comment[]
+  author    User       @relation(fields: [authorId], references: [id])
+  likes     PostLike[]
 }
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  post      Post     @relation(fields: [postId], references: [id])
   postId    Int
-  author    User     @relation(fields: [authorId], references: [id])
   authorId  Int
   content   String
   createdAt DateTime @default(now())
+  author    User     @relation(fields: [authorId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId])
 }
 
 model Follow {
   id          Int  @id @default(autoincrement())
-  follower    User @relation("followers", fields: [followerId], references: [id])
   followerId  Int
-  following   User @relation("following", fields: [followingId], references: [id])
   followingId Int
+  follower    User @relation("followers", fields: [followerId], references: [id])
+  following   User @relation("following", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
+}
+
+model Chat {
+  id       Int       @id @default(autoincrement())
+  userAId  Int
+  userBId  Int
+  userA    User      @relation("ChatUserA", fields: [userAId], references: [id])
+  userB    User      @relation("ChatUserB", fields: [userBId], references: [id])
+  messages Message[]
+
+  @@unique([userAId, userBId], name: "userAId_userBId")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  chatName  String?
+  text      String
+  createdAt DateTime @default(now())
+  chatId    Int?
+  senderId  Int?
+  chat      Chat?    @relation(fields: [chatId], references: [id])
+  sender    User?    @relation("UserMessages", fields: [senderId], references: [id])
 }

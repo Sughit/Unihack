@@ -384,6 +384,22 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
+// 🔹 Returnează user-ul curent (și îl creează dacă nu există)
+app.get("/api/me", checkJwt, async (req, res) => {
+  try {
+    console.log("Hit /api/me, auth payload:", req.auth?.payload);
+    const user = await getOrCreateUserFromToken(req.auth);
+    res.json(user);
+  } catch (err) {
+    console.error("GET /api/me:", err);
+    res.status(500).json({
+      error: err.message,
+      code: err.code || null,
+    });
+  }
+});
+
+// 🔹 Creează post
 // =========== POSTS + FEED ===========
 app.post("/api/posts", checkJwt, async (req, res) => {
   try {
@@ -405,6 +421,74 @@ app.post("/api/posts", checkJwt, async (req, res) => {
     res.json(post);
   } catch (err) {
     console.error("POST /api/posts error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 🔹 Postările utilizatorului curent (pentru pagina Profile)
+app.get("/api/my-posts", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const posts = await prisma.post.findMany({
+      where: { authorId: me.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    const mapped = posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: p.createdAt,
+      likeCount: p._count.likes,
+      commentCount: p._count.comments,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/my-posts error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 🔹 Postările utilizatorului curent (pentru pagina Profile)
+app.get("/api/my-posts", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const posts = await prisma.post.findMany({
+      where: { authorId: me.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    const mapped = posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: p.createdAt,
+      likeCount: p._count.likes,
+      commentCount: p._count.comments,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/my-posts error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -610,7 +694,6 @@ app.get("/api/artists", async (req, res) => {
   }
 });
 
-// =========== FOLLOW + CHATS ===========
 async function getOrCreateChat(meId, otherUserId) {
   const [a, b] = meId < otherUserId ? [meId, otherUserId] : [otherUserId, meId];
 
@@ -636,29 +719,27 @@ app.get("/api/following", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
 
-    const meWithFollowing = await prisma.user.findUnique({
-      where: { id: me.id },
+    // luăm toate follow-urile în care EU sunt follower
+    const follows = await prisma.follow.findMany({
+      where: {
+        followerId: me.id,
+      },
       include: {
-        following: {
-          include: {
-            following: true,
-          },
-        },
+        following: true, // user-ul pe care îl urmăresc
       },
     });
 
-    const followingList =
-      meWithFollowing?.following.map((f) => ({
-        id: f.following.id,
-        name:
-          f.following.username ||
-          f.following.name ||
-          f.following.email ||
-          "Unknown",
-        role: f.following.role,
-        country: f.following.country,
-        domain: f.following.domain,
-      })) || [];
+    const followingList = follows.map((f) => ({
+      id: f.following.id,
+      name:
+        f.following.username ||
+        f.following.name ||
+        f.following.email ||
+        "Unknown",
+      role: f.following.role,
+      country: f.following.country,
+      domain: f.following.domain,
+    }));
 
     res.json(followingList);
   } catch (err) {
@@ -676,6 +757,7 @@ app.post("/api/users/:id/follow", checkJwt, async (req, res) => {
       return res.status(400).json({ error: "Invalid target user id" });
     }
 
+    // există deja?
     const existing = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -726,7 +808,10 @@ app.get("/api/chats/:userId/messages", checkJwt, async (req, res) => {
       createdAt: m.createdAt,
       fromMe: m.senderId === me.id,
       senderName:
-        m.sender.username || m.sender.name || m.sender.email || "Unknown",
+        m.sender?.username ||
+        m.sender?.name ||
+        m.sender?.email ||
+        "Unknown",
     }));
 
     res.json(mapped);
@@ -766,9 +851,9 @@ app.post("/api/chats/:userId/messages", checkJwt, async (req, res) => {
       createdAt: message.createdAt,
       fromMe: true,
       senderName:
-        message.sender.username ||
-        message.sender.name ||
-        message.sender.email ||
+        message.sender?.username ||
+        message.sender?.name ||
+        message.sender?.email ||
         "You",
     });
   } catch (err) {
