@@ -1,10 +1,16 @@
+// src/pages/Main.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function Main() {
-  const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+  const {
+    isAuthenticated,
+    getAccessTokenSilently,
+    user,
+    loginWithRedirect,
+  } = useAuth0();
 
   // FOLLOWING
   const [following, setFollowing] = useState([]);
@@ -24,6 +30,30 @@ export default function Main() {
   // COMMENTS
   const [commentInputs, setCommentInputs] = useState({});
 
+  // ===== Helper pentru erori Auth0 (consent / login) =====
+  function handleAuth0Error(err) {
+    console.error("Auth0 error:", err);
+
+    const code =
+      err?.error ||
+      (typeof err?.message === "string" ? err.message : "");
+
+    if (
+      code?.includes("consent_required") ||
+      code?.includes("login_required") ||
+      code?.includes("interaction_required")
+    ) {
+      // forțăm redirect cu prompt=consent ca să accepte o dată pentru totdeauna
+      loginWithRedirect({
+        authorizationParams: {
+          prompt: "consent",
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope: "openid profile email offline_access",
+        },
+      });
+    }
+  }
+
   // ----- LOAD FOLLOWING -----
   useEffect(() => {
     if (!isAuthenticated) {
@@ -36,6 +66,7 @@ export default function Main() {
       try {
         setLoadingFollowing(true);
         const token = await getAccessTokenSilently();
+
         const res = await fetch(`${API_URL}/api/following`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -49,6 +80,7 @@ export default function Main() {
         setFollowing(data);
       } catch (err) {
         console.error("loadFollowing error:", err);
+        handleAuth0Error(err);
       } finally {
         setLoadingFollowing(false);
       }
@@ -82,6 +114,7 @@ export default function Main() {
         setPosts(data);
       } catch (err) {
         console.error("loadFeed error:", err);
+        handleAuth0Error(err);
       } finally {
         setLoadingPosts(false);
       }
@@ -138,7 +171,6 @@ export default function Main() {
           authorName:
             user?.nickname || user?.name || user?.email || "You",
           comments: [],
-          // authorId / isFollowing vin la reload din backend
         },
         ...prev,
       ]);
@@ -146,6 +178,7 @@ export default function Main() {
       setComposer({ title: "", content: "" });
     } catch (err) {
       console.error("handlePost error:", err);
+      handleAuth0Error(err);
       alert("Error creating post.");
     }
   }
@@ -182,6 +215,7 @@ export default function Main() {
       );
     } catch (err) {
       console.error("toggleLike error:", err);
+      handleAuth0Error(err);
     }
   }
 
@@ -224,6 +258,7 @@ export default function Main() {
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
     } catch (err) {
       console.error("handleAddComment error:", err);
+      handleAuth0Error(err);
     }
   }
 
@@ -253,6 +288,7 @@ export default function Main() {
         )
       );
 
+      // reîncarcăm lista Following
       const token2 = await getAccessTokenSilently();
       const res2 = await fetch(`${API_URL}/api/following`, {
         headers: { Authorization: `Bearer ${token2}` },
@@ -262,6 +298,7 @@ export default function Main() {
       }
     } catch (err) {
       console.error("toggleFollow error:", err);
+      handleAuth0Error(err);
     }
   }
 
@@ -292,6 +329,7 @@ export default function Main() {
         setChatMessages(data);
       } catch (err) {
         console.error("loadChat error:", err);
+        handleAuth0Error(err);
       } finally {
         setLoadingChat(false);
       }
@@ -334,6 +372,7 @@ export default function Main() {
       setChatInput("");
     } catch (err) {
       console.error("sendChatMessage error:", err);
+      handleAuth0Error(err);
     }
   }
 
@@ -407,7 +446,7 @@ export default function Main() {
                 <button
                   type="submit"
                   disabled={!isAuthenticated}
-                  className="px-5 py-2 bg-yellow-300 border-4 border-slate-900 rounded-2xl font-bold shadow-[4px_4px_0_0_#0F172A] disabled:opacity-60"
+                  className="px-5 py-2 bg-yellow-300 border-4 border-slate-900 rounded-2xl font-bold shadow-[8px_8px_0_0_#0F172A] disabled:opacity-60"
                 >
                   Post
                 </button>
@@ -417,9 +456,7 @@ export default function Main() {
 
           {/* Feed posts — fixed height + scroll */}
           <div className="bg-slate-200 border-4 border-slate-900 rounded-3xl p-4 shadow-[8px_8px_0_0_#0F172A]">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
-              Feed
-            </h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Feed</h2>
 
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1">
               {loadingPosts ? (
@@ -469,7 +506,8 @@ export default function Main() {
                             : "bg-yellow-300 text-slate-900"
                         }`}
                       >
-                        {post.likedByMe ? "Unlike" : "Like"} ({post.likeCount})
+                        {post.likedByMe ? "Unlike" : "Like"} (
+                        {post.likeCount})
                       </button>
 
                       <span className="text-xs text-slate-600">
@@ -543,7 +581,8 @@ export default function Main() {
           </h2>
 
           <p className="text-sm text-slate-600">
-            Open a chat by clicking someone from the <span className="font-semibold">Following</span> list.
+            Open a chat by clicking someone from the{" "}
+            <span className="font-semibold">Following</span> list.
           </p>
 
           {/* Popup chat */}
