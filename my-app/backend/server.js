@@ -1314,24 +1314,35 @@ app.delete("/api/my-creations/:id", checkJwt, async (req, res) => {
     console.log(`API running on http://localhost:${PORT}`);
     console.log(`Using Gemini model: ${MODEL_ID}`);
   });
-  app.get("/api/public-profile/:alias", async (req, res) => {
-    try {
-      const alias = req.params.alias;
+app.get("/api/public-profile/:alias", async (req, res) => {
+  try {
+    const alias = req.params.alias;
 
-      const user = await prisma.user.findFirst({
-        where: { username: alias },
-        include: {
-          posts: { orderBy: { createdAt: "desc" } },
-        },
-      });
+    // 1) luăm user-ul după alias
+    const user = await prisma.user.findFirst({
+      where: { username: alias },
+      include: {
+        posts: { orderBy: { createdAt: "desc" } },
+      },
+    });
 
-      if (!user) {
-        return res.status(404).json({ error: "not found" });
-      }
-
-      res.json(user);
-    } catch (err) {
-      console.error("public-profile error:", err);
-      res.status(500).json({ error: "server error" });
+    if (!user) {
+      return res.status(404).json({ error: "not found" });
     }
-  });
+
+    // 2) luăm creațiile separat după userId
+    const creations = await prisma.creation.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 3) trimitem user + creations la pachet
+    res.json({
+      ...user,
+      creations,
+    });
+  } catch (err) {
+    console.error("public-profile error:", err);
+    res.status(500).json({ error: "server error" });
+  }
+});

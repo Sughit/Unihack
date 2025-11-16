@@ -9,7 +9,7 @@ export default function PublicProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("posts"); // 🔥 meniul din stânga
+  const [tab, setTab] = useState("posts");
 
   useEffect(() => {
     async function loadProfile() {
@@ -64,10 +64,10 @@ export default function PublicProfile() {
   }
 
   const avatar =
-    user.avatarUrl ||
-    "https://placehold.co/200x200/png?text=Avatar";
+    user.avatarUrl || "https://placehold.co/200x200/png?text=Avatar";
 
   const posts = user.posts || [];
+  const creations = user.creations || []; // 👈 vine din backend acum
 
   return (
     <main className="min-h-screen bg-slate-100 py-10 px-4">
@@ -75,7 +75,11 @@ export default function PublicProfile() {
         {/* HEADER */}
         <header className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
           <div className="h-40 w-40 rounded-full overflow-hidden bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0F172A]">
-            <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
+            <img
+              src={avatar}
+              alt="avatar"
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <div className="flex-1">
@@ -87,9 +91,7 @@ export default function PublicProfile() {
             <div className="mt-3 text-sm text-slate-700 space-y-1">
               <p>
                 Role:{" "}
-                <span className="font-semibold">
-                  {user.role || "Unknown"}
-                </span>
+                <span className="font-semibold">{user.role || "Unknown"}</span>
               </p>
               <p>
                 Country:{" "}
@@ -115,9 +117,9 @@ export default function PublicProfile() {
           </div>
         </header>
 
-        {/* BODY CU MENIU STÂNGA + CONȚINUT DREAPTA */}
+        {/* BODY */}
         <section className="flex flex-col md:flex-row gap-8">
-          {/* STÂNGA — MENIU TAB-URI (ca la Profile) */}
+          {/* MENIU STÂNGA */}
           <aside className="w-full md:w-64 bg-slate-100 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4">
             <nav className="flex flex-col gap-4">
               <button
@@ -128,14 +130,18 @@ export default function PublicProfile() {
               </button>
 
               <button
-                className={`neo-btn ${tab === "creations" ? "neo-btn-active" : ""}`}
+                className={`neo-btn ${
+                  tab === "creations" ? "neo-btn-active" : ""
+                }`}
                 onClick={() => setTab("creations")}
               >
                 Creations
               </button>
 
               <button
-                className={`neo-btn ${tab === "contact" ? "neo-btn-active" : ""}`}
+                className={`neo-btn ${
+                  tab === "contact" ? "neo-btn-active" : ""
+                }`}
                 onClick={() => setTab("contact")}
               >
                 Contact
@@ -143,9 +149,10 @@ export default function PublicProfile() {
             </nav>
           </aside>
 
-          {/* DREAPTA — CONȚINUT TAB-URI */}
+          {/* CONȚINUT DREAPTA */}
           <div className="flex-1">
             <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 shadow-[10px_10px_0_0_#0F172A] min-h-[260px]">
+              {/* POSTS */}
               {tab === "posts" && (
                 <div>
                   <h2 className="text-2xl font-bold mb-4">Recent posts</h2>
@@ -179,18 +186,68 @@ export default function PublicProfile() {
                 </div>
               )}
 
+              {/* CREATIONS – read only, dar cu același stil ca în Profile */}
               {tab === "creations" && (
-                <div>
+                <div className="space-y-4">
                   <h2 className="text-2xl font-bold mb-4">Creations</h2>
-                  <p className="text-sm text-slate-700">
-                    This is the public portfolio area.  
-                    For now, this profile doesn&apos;t have any showcased
-                    creations. In the future you can link this to a gallery,
-                    Behance/Dribbble links, demo reels, etc.
-                  </p>
+
+                  {creations.length === 0 ? (
+                    <p className="text-sm text-slate-600">
+                      This artist hasn&apos;t added any public creations yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                      {creations.map((c) => (
+                        <article
+                          key={c.id}
+                          className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A] flex flex-col md:flex-row gap-4"
+                        >
+                          {c.imageUrl && (
+                            <div className="h-24 w-24 md:h-28 md:w-28 rounded-xl overflow-hidden border-4 border-slate-900 bg-white">
+                              <img
+                                src={c.imageUrl}
+                                alt={c.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {c.title}
+                            </h3>
+
+                            {c.link && (
+                              <a
+                                href={c.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-blue-600 underline break-all"
+                              >
+                                {c.link}
+                              </a>
+                            )}
+
+                            {c.createdAt && (
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                {new Date(c.createdAt).toLocaleString()}
+                              </p>
+                            )}
+
+                            {c.description && (
+                              <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap">
+                                {c.description}
+                              </p>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
+              {/* CONTACT */}
               {tab === "contact" && (
                 <div>
                   <h2 className="text-2xl font-bold mb-4">Contact</h2>
