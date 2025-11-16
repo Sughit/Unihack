@@ -34,6 +34,20 @@ export default function Profile() {
   const [myRequests, setMyRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+
+  // creațiile mele (portfolio)
+  const [creations, setCreations] = useState([]);
+  const [loadingCreations, setLoadingCreations] = useState(false);
+  const [creationForm, setCreationForm] = useState({
+    imageUrl: "",
+    title: "",
+    link: "",
+    description: "",
+  });
+  const [editingCreationId, setEditingCreationId] = useState(null);
+  const [savingCreation, setSavingCreation] = useState(false);
+
+
   // 🔥 state pentru badge-uri blockchain
   const [badgeLoading, setBadgeLoading] = useState(false);
   const [badgeMessage, setBadgeMessage] = useState("");
@@ -145,6 +159,36 @@ export default function Profile() {
     }
 
     loadMyPosts();
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+
+    // --- încarcă creațiile mele ---
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    async function loadMyCreations() {
+      try {
+        setLoadingCreations(true);
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/my-creations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Error loading my creations:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        setCreations(data);
+      } catch (err) {
+        console.error("loadMyCreations error:", err);
+      } finally {
+        setLoadingCreations(false);
+      }
+    }
+
+    loadMyCreations();
   }, [isAuthenticated, getAccessTokenSilently]);
 
     // --- încarcă cererile mele ACCEPTATE ---
@@ -274,6 +318,121 @@ export default function Profile() {
       setBadgeMessage("Eroare la acordarea badge-ului.");
     } finally {
       setBadgeLoading(false);
+    }
+  }
+  function onChangeCreation(e) {
+    const { name, value } = e.target;
+    setCreationForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function startEditCreation(c) {
+    setEditingCreationId(c.id);
+    setCreationForm({
+      imageUrl: c.imageUrl || "",
+      title: c.title || "",
+      link: c.link || "",
+      description: c.description || "",
+    });
+  }
+
+  async function onSubmitCreation(e) {
+    e.preventDefault();
+    if (!creationForm.title.trim()) return;
+    if (!isAuthenticated) return;
+
+    try {
+      setSavingCreation(true);
+      const token = await getAccessTokenSilently();
+
+      const payload = {
+        title: creationForm.title,
+        link: creationForm.link,
+        imageUrl: creationForm.imageUrl,
+        description: creationForm.description,
+      };
+
+      let res;
+      if (editingCreationId) {
+        res = await fetch(
+          `${API_URL}/api/my-creations/${editingCreationId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        res = await fetch(`${API_URL}/api/my-creations`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        console.error("Error saving creation:", await res.text());
+        return;
+      }
+
+      const saved = await res.json();
+
+      if (editingCreationId) {
+        setCreations((prev) =>
+          prev.map((c) => (c.id === saved.id ? saved : c))
+        );
+      } else {
+        setCreations((prev) => [saved, ...prev]);
+      }
+
+      setCreationForm({
+        imageUrl: "",
+        title: "",
+        link: "",
+        description: "",
+      });
+      setEditingCreationId(null);
+    } catch (err) {
+      console.error("onSubmitCreation error:", err);
+    } finally {
+      setSavingCreation(false);
+    }
+  }
+
+  async function onDeleteCreation(id) {
+    if (!window.confirm("Delete this creation?")) return;
+    if (!isAuthenticated) return;
+
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`${API_URL}/api/my-creations/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        console.error("Error deleting creation:", await res.text());
+        return;
+      }
+
+      setCreations((prev) => prev.filter((c) => c.id !== id));
+
+      if (editingCreationId === id) {
+        setEditingCreationId(null);
+        setCreationForm({
+          imageUrl: "",
+          title: "",
+          link: "",
+          description: "",
+        });
+      }
+    } catch (err) {
+      console.error("onDeleteCreation error:", err);
     }
   }
 
@@ -489,11 +648,192 @@ export default function Profile() {
                 </div>
               )}
 
-              {tab === "creations" && (
-                <p className="text-slate-700 text-lg">
-                  Aici apar creațiile utilizatorului.
-                </p>
+                 {tab === "creations" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    Your creations
+                  </h2>
+
+                  {/* FORMULAR – ca în schița ta */}
+                  <form
+                    onSubmit={onSubmitCreation}
+                    className="bg-slate-100 border-4 border-slate-900 rounded-2xl p-4 shadow-[6px_6px_0_0_#0F172A] space-y-3"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-[120px,1fr,1fr,1fr] gap-3 items-stretch">
+                      {/* IMG preview */}
+                   
+
+                      {/* TITLE */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                          Title
+                        </label>
+                        <input
+                          type="text"
+                          name="title"
+                          value={creationForm.title}
+                          onChange={onChangeCreation}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 text-sm bg-white"
+                          placeholder="Project title"
+                        />
+                      </div>
+
+                      {/* LINK */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                          Link
+                        </label>
+                        <input
+                          type="url"
+                          name="link"
+                          value={creationForm.link}
+                          onChange={onChangeCreation}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 text-sm bg-white"
+                          placeholder="https://behance.net/..."
+                        />
+                      </div>
+
+                      {/* IMAGE URL */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                          Image URL
+                        </label>
+                        <input
+                          type="url"
+                          name="imageUrl"
+                          value={creationForm.imageUrl}
+                          onChange={onChangeCreation}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 text-sm bg-white"
+                          placeholder="https://image.host/cover.png"
+                        />
+                      </div>
+                    </div>
+
+                    {/* DESCRIPTION + POST / SAVE */}
+                    <div className="grid grid-cols-[1fr,auto] gap-3 items-end">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                          Description
+                        </label>
+                        <textarea
+                          name="description"
+                          rows={3}
+                          value={creationForm.description}
+                          onChange={onChangeCreation}
+                          className="border-4 border-slate-900 rounded-xl px-3 py-2 text-sm bg-white resize-none"
+                          placeholder="Describe this creation, tools, style, etc."
+                        />
+                      </div>
+
+                      <div className="flex flex-col items-stretch gap-2">
+                        <button
+                          type="submit"
+                          disabled={savingCreation}
+                          className="px-4 py-2 bg-yellow-300 border-4 border-slate-900 rounded-xl font-bold text-sm shadow-[4px_4px_0_0_#0F172A] disabled:opacity-60"
+                        >
+                          {savingCreation
+                            ? "Saving..."
+                            : editingCreationId
+                            ? "Save"
+                            : "Post"}
+                        </button>
+
+                        {editingCreationId && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCreationId(null);
+                              setCreationForm({
+                                imageUrl: "",
+                                title: "",
+                                link: "",
+                                description: "",
+                              });
+                            }}
+                            className="px-4 py-1 bg-white border-4 border-slate-900 rounded-xl font-semibold text-xs shadow-[3px_3px_0_0_#0F172A]"
+                          >
+                            Cancel edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </form>
+
+                  {/* LISTĂ CREAȚII EXISTENTE */}
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                    {loadingCreations ? (
+                      <p className="text-sm text-slate-600">
+                        Loading your creations...
+                      </p>
+                    ) : creations.length === 0 ? (
+                      <p className="text-sm text-slate-600">
+                        You haven&apos;t added any creations yet.
+                      </p>
+                    ) : (
+                      creations.map((c) => (
+                        <article
+                          key={c.id}
+                          className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A] flex flex-col md:flex-row gap-4"
+                        >
+                          {c.imageUrl && (
+                            <div className="h-24 w-24 md:h-28 md:w-28 rounded-xl overflow-hidden border-4 border-slate-900 bg-white">
+                              <img
+                                src={c.imageUrl}
+                                alt={c.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {c.title}
+                            </h3>
+                            {c.link && (
+                              <a
+                                href={c.link}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs text-blue-600 underline break-all"
+                              >
+                                {c.link}
+                              </a>
+                            )}
+                            {c.createdAt && (
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                {new Date(c.createdAt).toLocaleString()}
+                              </p>
+                            )}
+                            {c.description && (
+                              <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap">
+                                {c.description}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex flex-row md:flex-col gap-2 items-end">
+                            <button
+                              type="button"
+                              onClick={() => startEditCreation(c)}
+                              className="px-3 py-1 text-xs bg-white border-3 border-slate-900 rounded-xl font-semibold shadow-[3px_3px_0_0_#0F172A]"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteCreation(c.id)}
+                              className="px-3 py-1 text-xs bg-red-500 text-white border-3 border-slate-900 rounded-xl font-semibold shadow-[3px_3px_0_0_#0F172A]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                </div>
               )}
+
 
               {tab === "request" && (
                 <div>

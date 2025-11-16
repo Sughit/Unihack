@@ -1089,6 +1089,116 @@ app.get("/api/my-project-requests", checkJwt, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+// =========== MY CREATIONS (portfolio) ===========
+
+// toate creațiile utilizatorului curent
+app.get("/api/my-creations", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const creations = await prisma.creation.findMany({
+      where: { userId: me.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(creations);
+  } catch (err) {
+    console.error("GET /api/my-creations error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// creează o creație nouă
+app.post("/api/my-creations", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const { title, link, imageUrl, description } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+
+    const creation = await prisma.creation.create({
+      data: {
+        userId: me.id,
+        title: title.trim(),
+        link: link?.trim() || null,
+        imageUrl: imageUrl?.trim() || null,
+        description: description?.trim() || null,
+      },
+    });
+
+    res.json(creation);
+  } catch (err) {
+    console.error("POST /api/my-creations error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// update la o creație (doar a ta)
+app.put("/api/my-creations/:id", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const id = Number(req.params.id);
+    const { title, link, imageUrl, description } = req.body;
+
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ error: "Invalid creation id" });
+    }
+
+    const existing = await prisma.creation.findFirst({
+      where: { id, userId: me.id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Creation not found" });
+    }
+
+    const updated = await prisma.creation.update({
+      where: { id },
+      data: {
+        title: title?.trim() || "",
+        link: link?.trim() || null,
+        imageUrl: imageUrl?.trim() || null,
+        description: description?.trim() || null,
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error("PUT /api/my-creations/:id error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// șterge o creație (doar a ta)
+app.delete("/api/my-creations/:id", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const id = Number(req.params.id);
+
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ error: "Invalid creation id" });
+    }
+
+    const existing = await prisma.creation.findFirst({
+      where: { id, userId: me.id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: "Creation not found" });
+    }
+
+    await prisma.creation.delete({ where: { id } });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/my-creations/:id error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
 
   // =========== START SERVER ===========
   app.listen(PORT, () => {

@@ -48,6 +48,7 @@ model User {
 
   buyerRequests  ProjectRequest[] @relation("BuyerRequests")
   artistRequests ProjectRequest[] @relation("ArtistRequests")
+  creations      Creation[]
 }
 
 model UserBadge {
@@ -162,4 +163,16 @@ model ProjectRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Creation {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  title       String
+  link        String? // ex: Behance, YouTube, site
+  imageUrl    String? // imaginea de preview
+  description String? // descrierea creației
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
