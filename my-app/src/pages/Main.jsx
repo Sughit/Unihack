@@ -64,29 +64,24 @@ export default function Main() {
 
     async function loadFollowing() {
       try {
-        setLoadingFollowing(true);
         const token = await getAccessTokenSilently();
-
         const res = await fetch(`${API_URL}/api/following`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) {
-          console.error("Error loading following:", await res.text());
-          return;
-        }
-
-        const data = await res.json();
-        setFollowing(data);
+        if (res.ok) setFollowing(await res.json());
       } catch (err) {
         console.error("loadFollowing error:", err);
         handleAuth0Error(err);
-      } finally {
-        setLoadingFollowing(false);
       }
     }
 
     loadFollowing();
+
+    const interval = setInterval(() => {
+      loadFollowing();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- LOAD FEED -----
@@ -99,28 +94,28 @@ export default function Main() {
 
     async function loadFeed() {
       try {
-        setLoadingPosts(true);
         const token = await getAccessTokenSilently();
         const res = await fetch(`${API_URL}/api/feed`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (!res.ok) {
-          console.error("Error loading feed:", await res.text());
-          return;
-        }
-
+        if (!res.ok) return;
         const data = await res.json();
         setPosts(data);
       } catch (err) {
         console.error("loadFeed error:", err);
         handleAuth0Error(err);
-      } finally {
-        setLoadingPosts(false);
       }
     }
 
+    // încărcare prima dată
     loadFeed();
+
+    // autorefresh
+    const interval = setInterval(() => {
+      loadFeed();
+    }, 5000); // 5 secunde
+
+    return () => clearInterval(interval);
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- COMPOSER -----
