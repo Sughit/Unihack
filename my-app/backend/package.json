@@ -15,7 +15,9 @@
   "dependencies": {
     "@google/genai": "^1.29.1",
     "@google/generative-ai": "^0.24.1",
+    "@metaplex-foundation/js": "^0.20.1",
     "@prisma/client": "^6.19.0",
+    "@solana/web3.js": "^1.98.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
