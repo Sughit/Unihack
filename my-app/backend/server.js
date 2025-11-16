@@ -863,17 +863,14 @@ app.post("/api/chats/:userId/messages", checkJwt, async (req, res) => {
 });
 
 // Buyer -> trimite o cerere de proiect către artistul cu care vorbește
+// Buyer -> trimite o cerere de proiect către artistul cu care vorbește
 app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
     const otherUserId = Number(req.params.userId);
 
-    if (!otherUserId || Number.isNaN(otherUserId)) {
+    if (Number.isNaN(otherUserId) || otherUserId === me.id) {
       return res.status(400).json({ error: "Invalid user id" });
-    }
-
-    if (me.id === otherUserId) {
-      return res.status(400).json({ error: "Cannot send request to yourself" });
     }
 
     if (me.role !== "BUYER") {
@@ -895,7 +892,7 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
       deadlineDate = d;
     }
 
-    // găsim sau creăm chat între cei doi
+    // găsim sau creăm chat-ul între cei doi
     let chat = await prisma.chat.findFirst({
       where: {
         OR: [
@@ -914,7 +911,7 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
       });
     }
 
-    // creăm ProjectRequest în DB
+    // salvăm cererea în DB
     const pr = await prisma.projectRequest.create({
       data: {
         buyerId: me.id,
@@ -926,7 +923,7 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
       },
     });
 
-    // trimitem și mesaj în chat
+    // trimitem și mesaj în chat ca să vadă și artistul
     const textLines = [
       "📌 PROJECT REQUEST",
       `Budget: ${budget}`,
@@ -940,9 +937,23 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
         senderId: me.id,
         text: textLines.join("\n"),
       },
+      include: { sender: true },
     });
 
-    res.json({ projectRequest: pr, message });
+    res.json({
+      projectRequest: pr,
+      message: {
+        id: message.id,
+        text: message.text,
+        createdAt: message.createdAt,
+        fromMe: true,
+        senderName:
+          message.sender.username ||
+          message.sender.name ||
+          message.sender.email ||
+          "You",
+      },
+    });
   } catch (err) {
     console.error("POST /api/chats/:userId/project-requests error:", err);
     res.status(500).json({ error: "Server error" });
@@ -950,24 +961,24 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
 });
 
 // Artist -> acceptă sau refuză o cerere de proiect
+// Artist -> acceptă sau refuză cererea de proiect
 app.post("/api/project-requests/respond", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
     const { buyerId, decision } = req.body;
 
-    if (!buyerId || Number.isNaN(Number(buyerId))) {
-      return res.status(400).json({ error: "Invalid buyer id" });
-    }
-
     if (me.role !== "ARTIST") {
       return res.status(403).json({ error: "Only ARTIST can respond to project requests" });
+    }
+
+    if (!buyerId || Number.isNaN(Number(buyerId))) {
+      return res.status(400).json({ error: "Invalid buyer id" });
     }
 
     if (!["ACCEPTED", "DENIED"].includes(decision)) {
       return res.status(400).json({ error: "Decision must be ACCEPTED or DENIED" });
     }
 
-    // găsim cea mai recentă cerere PENDING între buyer și artist
     const pr = await prisma.projectRequest.findFirst({
       where: {
         buyerId: Number(buyerId),
@@ -986,7 +997,6 @@ app.post("/api/project-requests/respond", checkJwt, async (req, res) => {
       data: { status: decision },
     });
 
-    // opțional: mesaj automat în chat
     if (pr.chatId) {
       const text =
         decision === "ACCEPTED"
@@ -1008,7 +1018,6 @@ app.post("/api/project-requests/respond", checkJwt, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 // =========== START SERVER ===========
 app.listen(PORT, () => {
