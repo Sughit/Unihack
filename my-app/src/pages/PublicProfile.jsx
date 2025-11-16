@@ -9,6 +9,7 @@ export default function PublicProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState("posts"); // 🔥 meniul din stânga
 
   useEffect(() => {
     async function loadProfile() {
@@ -66,70 +67,179 @@ export default function PublicProfile() {
     user.avatarUrl ||
     "https://placehold.co/200x200/png?text=Avatar";
 
+  const posts = user.posts || [];
+
   return (
     <main className="min-h-screen bg-slate-100 py-10 px-4">
-      <div className="max-w-5xl mx-auto bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[12px_12px_0_0_#0F172A] p-8">
+      <div className="max-w-6xl mx-auto bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[12px_12px_0_0_#0F172A] p-8">
         {/* HEADER */}
-        <header className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-10">
+        <header className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
           <div className="h-40 w-40 rounded-full overflow-hidden bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0F172A]">
             <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
           </div>
 
-          <div>
+          <div className="flex-1">
             <h1 className="text-5xl font-bold text-slate-900">
               {user.name || "Unnamed User"}
             </h1>
-            <p className="text-lg text-slate-700">(~{user.username})</p>
+            <p className="text-lg text-slate-700 mt-1">(~{user.username})</p>
 
-            <div className="mt-2 text-sm text-slate-700 space-y-1">
+            <div className="mt-3 text-sm text-slate-700 space-y-1">
               <p>
-                Role: <b>{user.role || "Unknown"}</b>
+                Role:{" "}
+                <span className="font-semibold">
+                  {user.role || "Unknown"}
+                </span>
               </p>
               <p>
-                Country: <b>{user.country || "Unknown"}</b>
+                Country:{" "}
+                <span className="font-semibold">
+                  {user.country || "Unknown"}
+                </span>
               </p>
               {user.role === "ARTIST" && (
                 <p>
-                  Domain: <b>{user.domain || "Unknown"}</b>
+                  Domain:{" "}
+                  <span className="font-semibold">
+                    {user.domain || "Unknown"}
+                  </span>
                 </p>
               )}
               <p>
-                Languages: <b>{user.languages || "not specified"}</b>
+                Languages:{" "}
+                <span className="font-semibold">
+                  {user.languages || "not specified"}
+                </span>
               </p>
             </div>
           </div>
         </header>
 
-        {/* POSTS SECTION */}
-        <section className="bg-white border-4 border-slate-900 rounded-3xl p-6 shadow-[10px_10px_0_0_#0F172A]">
-          <h2 className="text-2xl font-bold mb-4">Recent posts</h2>
+        {/* BODY CU MENIU STÂNGA + CONȚINUT DREAPTA */}
+        <section className="flex flex-col md:flex-row gap-8">
+          {/* STÂNGA — MENIU TAB-URI (ca la Profile) */}
+          <aside className="w-full md:w-64 bg-slate-100 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4">
+            <nav className="flex flex-col gap-4">
+              <button
+                className={`neo-btn ${tab === "posts" ? "neo-btn-active" : ""}`}
+                onClick={() => setTab("posts")}
+              >
+                Posts
+              </button>
 
-          {!user.posts || user.posts.length === 0 ? (
-            <p className="text-sm text-slate-600">
-              This user has no posts yet.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {user.posts.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A]"
-                >
-                  <h3 className="text-lg font-bold text-slate-900">
-                    {post.title || "(untitled)"}
-                  </h3>
-                  <p className="text-xs text-slate-500 mb-1">
-                    {post.createdAt
-                      ? new Date(post.createdAt).toLocaleString()
-                      : ""}
+              <button
+                className={`neo-btn ${tab === "creations" ? "neo-btn-active" : ""}`}
+                onClick={() => setTab("creations")}
+              >
+                Creations
+              </button>
+
+              <button
+                className={`neo-btn ${tab === "contact" ? "neo-btn-active" : ""}`}
+                onClick={() => setTab("contact")}
+              >
+                Contact
+              </button>
+            </nav>
+          </aside>
+
+          {/* DREAPTA — CONȚINUT TAB-URI */}
+          <div className="flex-1">
+            <div className="bg-white border-4 border-slate-900 rounded-3xl p-6 shadow-[10px_10px_0_0_#0F172A] min-h-[260px]">
+              {tab === "posts" && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">Recent posts</h2>
+
+                  {posts.length === 0 ? (
+                    <p className="text-sm text-slate-600">
+                      This user has no posts yet.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {posts.map((post) => (
+                        <article
+                          key={post.id}
+                          className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A]"
+                        >
+                          <h3 className="text-lg font-bold text-slate-900">
+                            {post.title || "(untitled)"}
+                          </h3>
+                          <p className="text-xs text-slate-500 mb-1">
+                            {post.createdAt
+                              ? new Date(post.createdAt).toLocaleString()
+                              : ""}
+                          </p>
+                          <p className="text-sm text-slate-800 whitespace-pre-wrap">
+                            {post.content}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === "creations" && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">Creations</h2>
+                  <p className="text-sm text-slate-700">
+                    This is the public portfolio area.  
+                    For now, this profile doesn&apos;t have any showcased
+                    creations. In the future you can link this to a gallery,
+                    Behance/Dribbble links, demo reels, etc.
                   </p>
-                  <p className="text-sm text-slate-800 whitespace-pre-wrap">
-                    {post.content}
+                </div>
+              )}
+
+              {tab === "contact" && (
+                <div>
+                  <h2 className="text-2xl font-bold mb-4">Contact</h2>
+
+                  <div className="space-y-2 text-sm text-slate-800">
+                    <p>
+                      Name:{" "}
+                      <span className="font-semibold">
+                        {user.name || "Not specified"}
+                      </span>
+                    </p>
+                    <p>
+                      Alias:{" "}
+                      <span className="font-mono">~{user.username}</span>
+                    </p>
+                    <p>
+                      Role:{" "}
+                      <span className="font-semibold">
+                        {user.role || "Unknown"}
+                      </span>
+                    </p>
+                    <p>
+                      Country:{" "}
+                      <span className="font-semibold">
+                        {user.country || "Unknown"}
+                      </span>
+                    </p>
+                    {user.email && (
+                      <p>
+                        Email:{" "}
+                        <span className="font-mono">{user.email}</span>
+                      </p>
+                    )}
+                    {!user.email && (
+                      <p className="text-xs text-slate-500">
+                        This user has not shared a public email address.
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="mt-4 text-xs text-slate-500">
+                    Tip: use the platform&apos;s chat feature to contact this
+                    artist safely. Never share sensitive data or payments
+                    outside trusted channels.
                   </p>
-                </article>
-              ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </section>
       </div>
     </main>
