@@ -585,15 +585,30 @@ async function toggleFollow(userId) {
 
         {/* RIGHT — Recent chats + popup chat */}
         <aside className="w-full lg:w-1/4 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4 relative">
-          <h2 className="text-xl font-bold text-slate-900 mb-3">
-            Recent chats
-          </h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-3">Chats</h2>
+            {/* LISTA DE FOLLOWING (chat-uri posibile) */}
+            <div className="mb-4">
+              <p className="text-sm text-slate-600 mb-2">Select someone to chat with:</p>
 
-          <p className="text-sm text-slate-600">
-            Open a chat by clicking someone from the{" "}
-            <span className="font-semibold">Following</span> list.
-          </p>
-
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {following.length === 0 ? (
+                  <p className="text-sm text-slate-500">You follow no one.</p>
+                ) : (
+                  following.map((artist) => (
+                    <button
+                      key={artist.id}
+                      onClick={() => setActiveChatUser({ id: artist.id, name: artist.name })}
+                      className={`w-full flex flex-col items-start bg-white border-4 border-slate-900 rounded-2xl px-3 py-2 shadow-[4px_4px_0_0_#0F172A] text-left ${
+                        activeChatUser?.id === artist.id ? "bg-yellow-200" : ""
+                      }`}
+                    >
+                      <div className="font-semibold text-slate-900">{artist.name}</div>
+                      <div className="text-xs text-slate-600">{artist.domain || artist.role}</div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
           {/* Popup chat */}
           {activeChatUser && (
             <div className="hidden lg:block fixed bottom-4 right-4 w-80 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-3 z-50">
