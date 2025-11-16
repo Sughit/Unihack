@@ -34,6 +34,8 @@ export default function Profile() {
   const [myRequests, setMyRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+  const [deliveryLinks, setDeliveryLinks] = useState({}); // { [reqId]: string }
+  const [sendingDelivery, setSendingDelivery] = useState(false);
 
   // creațiile mele (portfolio)
   const [creations, setCreations] = useState([]);
@@ -436,6 +438,52 @@ export default function Profile() {
     }
   }
 
+  async function sendDeliveryLink(req) {
+    if (!dbUser || dbUser.role !== "ARTIST") return;
+    if (!req.buyer || !req.buyer.id) return;
+
+    const link = (deliveryLinks[req.id] || "").trim();
+    if (!link) {
+      alert("Please enter a delivery link first.");
+      return;
+    }
+
+    try {
+      setSendingDelivery(true);
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`${API_URL}/api/project-requests/deliver`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          buyerId: req.buyer.id,
+          link,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Error sending delivery link:", await res.text());
+        return;
+      }
+
+      const updated = await res.json();
+
+      // actualizăm în listă
+      setMyRequests((prev) =>
+        prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r))
+      );
+
+      // reset input pentru cererea respectivă
+      setDeliveryLinks((prev) => ({ ...prev, [req.id]: "" }));
+    } catch (err) {
+      console.error("sendDeliveryLink error:", err);
+    } finally {
+      setSendingDelivery(false);
+    }
+  }
+
   // --- loading Auth0 ---
   if (isLoading) {
     return (
@@ -574,14 +622,16 @@ export default function Profile() {
                 Posts
               </button>
 
-              <button
-                className={`neo-btn ${
-                  tab === "creations" ? "neo-btn-active" : ""
-                }`}
-                onClick={() => setTab("creations")}
-              >
-                Creations
-              </button>
+              {dbUser?.role === "ARTIST" && (
+                <button
+                  className={`neo-btn ${
+                    tab === "creations" ? "neo-btn-active" : ""
+                  }`}
+                  onClick={() => setTab("creations")}
+                >
+                  Creations
+                </button>
+              )}
 
               <button
                 className={`neo-btn ${
@@ -874,7 +924,8 @@ export default function Profile() {
                           </div>
 
                           <p className="text-sm text-slate-800">
-                            <span className="font-semibold">Budget:</span> {req.budget}
+                            <span className="font-semibold">Budget:</span>{" "}
+                            {req.budget}
                           </p>
 
                           {req.deadline && (
@@ -886,8 +937,73 @@ export default function Profile() {
 
                           {req.notes && (
                             <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap">
-                              <span className="font-semibold">Details:</span> {req.notes}
+                              <span className="font-semibold">Details:</span>{" "}
+                              {req.notes}
                             </p>
+                          )}
+
+                          {/* 🔹 Delivery link vizibil pentru ambele roluri dacă există */}
+                          {req.deliveryLink && (
+                            <p className="text-sm text-slate-800 mt-2">
+                              <span className="font-semibold">
+                                Delivery link:
+                              </span>{" "}
+                              <a
+                                href={req.deliveryLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-blue-600 underline break-all"
+                              >
+                                {req.deliveryLink}
+                              </a>
+                              {req.deliveredAt && (
+                                <span className="text-xs text-slate-500 ml-2">
+                                  (sent{" "}
+                                  {new Date(
+                                    req.deliveredAt
+                                  ).toLocaleString()}
+                                  )
+                                </span>
+                              )}
+                            </p>
+                          )}
+
+                          {/* 🔹 Dacă e ARTIST și NU există încă delivery link -> input + buton */}
+                          {dbUser?.role === "ARTIST" && !req.deliveryLink && (
+                            <div className="mt-3 flex flex-col gap-2">
+                              <label className="text-xs font-semibold text-slate-700">
+                                Delivery link for this project
+                              </label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="url"
+                                  placeholder="https://my-portfolio.com/project-file"
+                                  value={deliveryLinks[req.id] || ""}
+                                  onChange={(e) =>
+                                    setDeliveryLinks((prev) => ({
+                                      ...prev,
+                                      [req.id]: e.target.value,
+                                    }))
+                                  }
+                                  className="flex-1 border-4 border-slate-900 rounded-xl px-3 py-1 text-sm bg-white"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => sendDeliveryLink(req)}
+                                  disabled={sendingDelivery}
+                                  className="px-3 py-1 bg-green-300 border-4 border-slate-900 rounded-xl text-xs font-bold shadow-[3px_3px_0_0_#0F172A] disabled:opacity-60"
+                                >
+                                  {sendingDelivery
+                                    ? "Sending..."
+                                    : "Send link"}
+                                </button>
+                              </div>
+                              <p className="text-[11px] text-slate-500">
+                                Paste here the URL to the final files (Drive,
+                                Behance, Figma, etc.). The buyer will see it in
+                                their Requests tab.
+                              </p>
+                            </div>
                           )}
 
                           <p className="text-xs text-slate-500 mt-2">

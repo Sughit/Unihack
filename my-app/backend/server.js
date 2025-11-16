@@ -1065,6 +1065,70 @@ app.get("/api/chats", checkJwt, async (req, res) => {
   }
 });
 
+// Artist -> trimite link-ul livrării către buyer
+app.post("/api/project-requests/deliver", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    if (me.role !== "ARTIST") {
+      return res
+        .status(403)
+        .json({ error: "Only ARTIST can send delivery links" });
+    }
+
+    const { buyerId, link } = req.body;
+
+    if (!buyerId || Number.isNaN(Number(buyerId))) {
+      return res.status(400).json({ error: "Invalid buyer id" });
+    }
+
+    const trimmedLink = (link || "").trim();
+    if (!trimmedLink) {
+      return res.status(400).json({ error: "Delivery link is required" });
+    }
+
+    // găsim cea mai recentă cerere ACCEPTED între buyer și artist
+    const pr = await prisma.projectRequest.findFirst({
+      where: {
+        buyerId: Number(buyerId),
+        artistId: me.id,
+        status: "ACCEPTED",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (!pr) {
+      return res
+        .status(404)
+        .json({ error: "No accepted project request found for this buyer" });
+    }
+
+    const updated = await prisma.projectRequest.update({
+      where: { id: pr.id },
+      data: {
+        deliveryLink: trimmedLink,
+        deliveredAt: new Date(),
+      },
+    });
+
+    // optional: mesaj automat în chat
+    if (pr.chatId) {
+      await prisma.message.create({
+        data: {
+          chatId: pr.chatId,
+          senderId: me.id,
+          text: `📦 DELIVERY LINK\n${trimmedLink}`,
+        },
+      });
+    }
+
+    res.json(updated);
+  } catch (err) {
+    console.error("POST /api/project-requests/deliver error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.get("/api/my-project-requests", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -1104,6 +1168,8 @@ app.get("/api/my-project-requests", checkJwt, async (req, res) => {
       notes: pr.notes,
       status: pr.status,
       createdAt: pr.createdAt,
+      deliveryLink: pr.deliveryLink,
+      deliveredAt: pr.deliveredAt,
       buyer: pr.buyer
         ? {
             id: pr.buyer.id,
