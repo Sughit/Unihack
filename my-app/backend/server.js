@@ -4,17 +4,23 @@ const cors = require("cors");
 const { auth } = require("express-oauth2-jwt-bearer");
 const { GoogleGenAI } = require("@google/genai");
 const prisma = require("./prismaClient");
+const { mintBadgeNft } = require("./mintBadgeNft");
+const { Keypair } = require("@solana/web3.js");
 require("dotenv").config();
 
-// pentru debug env Gemini
+const app = express();
+const PORT = process.env.PORT || 4000;
+
+// =========== DEBUG ENV ===========
 console.log(
   "ENV GEMINI_API_KEY prefix:",
   process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.slice(0, 10) : "MISSING"
 );
 console.log("ENV GEMINI_MODEL:", process.env.GEMINI_MODEL);
-
-const app = express();
-const PORT = process.env.PORT || 4000;
+console.log(
+  "CREON_WALLET_SECRET:",
+  process.env.CREON_WALLET_SECRET ? "SET" : "MISSING"
+);
 
 // =========== MIDDLEWARE ===========
 app.use(cors());
@@ -26,43 +32,65 @@ const checkJwt = auth({
   issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
 });
 
-// 🔧 Helper: creează sau găsește user-ul în DB pe baza token-ului Auth0
+// =========== HELPER USER + WALLET ===========
+ 
+
 async function getOrCreateUserFromToken(authData) {
   if (!authData) {
     throw new Error("req.auth este undefined – checkJwt nu a rulat.");
   }
 
   const payload = authData.payload;
-  const auth0Id = payload.sub; // ex: "auth0|abc123"
-  const email = payload.email || null; // poate lipsi din token
-  const name = payload.name || null;
 
-  if (!auth0Id) {
-    throw new Error("Tokenul de Auth0 nu conține sub (auth0Id).");
-  }
+  const auth0Id = payload.sub;
+  const email = payload.email;
+  const name = payload.name || payload.nickname || null;
 
-  // Un singur query: dacă există -> update, dacă nu -> create
-  const user = await prisma.user.upsert({
-    where: { auth0Id }, // caută după auth0Id (UNIQUE)
-    create: {
-      auth0Id,
-      email,
-      name,
-    },
-    update: {
-      email,
-      name,
-    },
+  // 1) încercăm să-l găsim
+  let user = await prisma.user.findUnique({
+    where: { auth0Id },
   });
+
+  // 2) dacă nu există, îl creăm + wallet
+  if (!user) {
+    const wallet = Keypair.generate();
+    const walletAddress = wallet.publicKey.toBase58();
+
+    try {
+      user = await prisma.user.create({
+        data: {
+          auth0Id,
+          email,
+          name,
+          walletAddress,
+        },
+      });
+
+      console.log("➡ Creat user nou + wallet:", walletAddress);
+    } catch (err) {
+      // dacă altcineva l-a creat între timp / există deja același auth0Id
+      if (err.code === "P2002") {
+        console.warn(
+          "User cu acest auth0Id există deja, refacem findUnique:",
+          auth0Id
+        );
+        user = await prisma.user.findUnique({
+          where: { auth0Id },
+        });
+      } else {
+        throw err;
+      }
+    }
+  }
 
   return user;
 }
+
 
 // =========== GEMINI SETUP ==========
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MODEL_ID = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-// 🔧 Instrucțiuni globale pentru asistentul Creon
 const CREON_SYSTEM_INSTRUCTION = `
 You are "Creon Assistant", the built-in AI assistant of the Creon web platform.
 
@@ -184,17 +212,13 @@ app.post("/api/chat", async (req, res) => {
 
     const geminiResponse = await ai.models.generateContent({
       model: MODEL_ID,
-      contents: message, // poate fi simplu string, SDK-ul îl acceptă
+      contents: message,
       config: {
-        // 🔥 AICI îi dăm contextul fix pentru Creon
-        systemInstruction: [
-          CREON_SYSTEM_INSTRUCTION,
-        ],
+        systemInstruction: [CREON_SYSTEM_INSTRUCTION],
       },
     });
 
     const text = geminiResponse.text;
-
     console.log(">>> gemini text:", text);
 
     res.json({ reply: text });
@@ -207,9 +231,21 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// =========== USER PROFILE (GET + UPDATE) ===========
+app.get("/api/me", checkJwt, async (req, res) => {
+  try {
+    console.log("Hit /api/me, auth payload:", req.auth?.payload);
+    const user = await getOrCreateUserFromToken(req.auth);
+    res.json(user);
+  } catch (err) {
+    console.error("GET /api/me:", err);
+    res.status(500).json({
+      error: err.message,
+      code: err.code || null,
+    });
+  }
+});
 
-// =========== PRISMA MESSAGES ===========
-// ia mesaje pentru un chat (ex: /api/messages?chatName=RAPPERUL%23TAU)
 app.put("/api/me", checkJwt, async (req, res) => {
   try {
     const baseUser = await getOrCreateUserFromToken(req.auth);
@@ -222,7 +258,7 @@ app.put("/api/me", checkJwt, async (req, res) => {
       languages,
       email,
       name,
-      avatarUrl, // 🔥 nou
+      avatarUrl,
     } = req.body;
 
     const updates = {};
@@ -231,7 +267,6 @@ app.put("/api/me", checkJwt, async (req, res) => {
 
     if (role !== undefined) {
       updates.role = role;
-
       if (role === "ARTIST") {
         if (domain !== undefined) updates.domain = domain;
       } else if (role === "BUYER") {
@@ -243,11 +278,7 @@ app.put("/api/me", checkJwt, async (req, res) => {
     if (languages !== undefined) updates.languages = languages;
     if (email !== undefined) updates.email = email;
     if (name !== undefined) updates.name = name;
-
-    // 🔥 nou – salvăm avatarUrl dacă vine din frontend
-    if (avatarUrl !== undefined) {
-      updates.avatarUrl = avatarUrl;
-    }
+    if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
 
     const updatedUser = await prisma.user.update({
       where: { id: baseUser.id },
@@ -261,8 +292,78 @@ app.put("/api/me", checkJwt, async (req, res) => {
   }
 });
 
+// =========== BADGES (BLOCKCHAIN) ===========
 
-// adaugă un mesaj nou
+// GET simplu ca să nu mai vezi "Cannot GET" când intri direct în browser
+app.get("/api/badges/award", (req, res) => {
+  res.status(405).json({
+    error:
+      "Use POST /api/badges/award cu Authorization: Bearer <token> și body { \"badgeType\": \"artist_verified\" }",
+  });
+});
+
+// Acordă badge user-ului curent (mint NFT + salvează în DB)
+app.post("/api/badges/award", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const { badgeType } = req.body;
+
+    if (!badgeType) {
+      return res.status(400).json({ error: "badgeType is required" });
+    }
+
+    if (!me.walletAddress) {
+      return res
+        .status(400)
+        .json({ error: "User has no walletAddress configured" });
+    }
+
+    const { mintAddress, txSignature } = await mintBadgeNft(
+      me.walletAddress,
+      badgeType
+    );
+
+    const badge = await prisma.userBadge.create({
+      data: {
+        userId: me.id,
+        type: badgeType,
+        txSignature,
+      },
+    });
+
+    res.json({
+      ok: true,
+      badge,
+      mintAddress,
+      explorerUrl: `https://explorer.solana.com/tx/${txSignature}?cluster=devnet`,
+    });
+  } catch (err) {
+    console.error("POST /api/badges/award error:", err);
+    res.status(500).json({
+      error: "Could not award badge",
+      details: String(err.message || err),
+    });
+  }
+});
+
+// Lista badge-urilor user-ului curent
+app.get("/api/me/badges", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const badges = await prisma.userBadge.findMany({
+      where: { userId: me.id },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(badges);
+  } catch (err) {
+    console.error("GET /api/me/badges error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// =========== MESSAGES SIMPLE ===========
 app.post("/api/messages", async (req, res) => {
   const { chatName, text } = req.body;
 
@@ -283,57 +384,7 @@ app.post("/api/messages", async (req, res) => {
   }
 });
 
-// 🔹 Returnează user-ul curent (și îl creează dacă nu există)
-app.get("/api/me", checkJwt, async (req, res) => {
-  try {
-    console.log("Hit /api/me, auth payload:", req.auth?.payload);
-    const user = await getOrCreateUserFromToken(req.auth);
-    res.json(user);
-  } catch (err) {
-    console.error("GET /api/me:", err);
-    res.status(500).json({
-      error: err.message,
-      code: err.code || null,
-    });
-  }
-});
-
-// 🔹 Update atribute user (username, role, country, domain, languages)
-app.put("/api/me", checkJwt, async (req, res) => {
-  try {
-    const baseUser = await getOrCreateUserFromToken(req.auth);
-
-    const { username, role, country, domain, languages, email, name } = req.body;
-
-    const updates = {};
-
-    if (username !== undefined) updates.username = username;
-    if (role !== undefined) {
-      updates.role = role;
-      if (role === "ARTIST") {
-        if (domain !== undefined) updates.domain = domain;
-      } else if (role === "BUYER") {
-        updates.domain = null;
-      }
-    }
-    if (country !== undefined) updates.country = country;
-    if (languages !== undefined) updates.languages = languages;
-    if (email !== undefined) updates.email = email;
-    if (name !== undefined) updates.name = name;
-
-    const updatedUser = await prisma.user.update({
-      where: { id: baseUser.id },
-      data: updates,
-    });
-
-    res.json(updatedUser);
-  } catch (err) {
-    console.error("PUT /api/me:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// 🔹 Creează post
+// =========== POSTS + FEED ===========
 app.post("/api/posts", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -358,7 +409,6 @@ app.post("/api/posts", checkJwt, async (req, res) => {
   }
 });
 
-// 🔹 Feed cu postări + like-uri + comentarii
 app.get("/api/feed", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -379,7 +429,6 @@ app.get("/api/feed", checkJwt, async (req, res) => {
       },
     });
 
-    // luăm toate id-urile de autori din feed
     const authorIds = [
       ...new Set(
         posts
@@ -388,7 +437,6 @@ app.get("/api/feed", checkJwt, async (req, res) => {
       ),
     ];
 
-    // toate follow-urile în care EU (me.id) îi urmăresc pe acești autori
     let followingSet = new Set();
     if (authorIds.length > 0) {
       const follows = await prisma.follow.findMany({
@@ -405,12 +453,8 @@ app.get("/api/feed", checkJwt, async (req, res) => {
       title: p.title,
       content: p.content,
       createdAt: p.createdAt,
-
-      // like-uri
       likeCount: p._count.likes,
       likedByMe: p.likes.length > 0,
-
-      // date autor (ne trebuie pentru follow + chat)
       authorId: p.authorId,
       authorIsMe: p.authorId === me.id,
       authorName:
@@ -419,8 +463,6 @@ app.get("/api/feed", checkJwt, async (req, res) => {
         p.author?.email ||
         "Unknown artist",
       isFollowing: p.authorId ? followingSet.has(p.authorId) : false,
-
-      // comentarii
       comments: p.comments.map((c) => ({
         id: c.id,
         content: c.content,
@@ -440,7 +482,37 @@ app.get("/api/feed", checkJwt, async (req, res) => {
   }
 });
 
-// 🔹 Comentarii la postări
+// 🔹 Postările mele (pentru pagina de profil)
+app.get("/api/my-posts", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const posts = await prisma.post.findMany({
+      where: { authorId: me.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { likes: true, comments: true },
+        },
+      },
+    });
+
+    const mapped = posts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      content: p.content,
+      createdAt: p.createdAt,
+      likeCount: p._count.likes,
+      commentCount: p._count.comments,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/my-posts error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -479,7 +551,6 @@ app.post("/api/posts/:id/comments", checkJwt, async (req, res) => {
   }
 });
 
-// 🔹 Like / Unlike post
 app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -488,7 +559,6 @@ app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
       return res.status(400).json({ error: "Invalid post id" });
     }
 
-    // verificăm dacă există deja like
     const existing = await prisma.postLike.findUnique({
       where: {
         postId_userId: {
@@ -521,24 +591,18 @@ app.post("/api/posts/:id/like", checkJwt, async (req, res) => {
   }
 });
 
-// 🔹 LISTĂ USERI PENTRU PAGINA SEARCH
-// 🔹 LISTĂ ARTIȘTI pentru pagina Search (public, fără Auth0)
-// 🔹 LISTĂ USERI PENTRU PAGINA SEARCH (cu debug detaliat)
+// =========== ARTISTS LIST (SEARCH PAGE) ===========
 app.get("/api/artists", async (req, res) => {
   try {
-    // Test simplu că Prisma și baza de date răspund
     await prisma.$queryRaw`SELECT 1`;
 
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
     });
 
-    // frontend-ul va filtra doar cei cu role === "ARTIST"
     res.json(users);
   } catch (err) {
     console.error("GET /api/artists error:", err);
-
-    // trimitem și detaliile înapoi ca să le poți vedea în browser / Network
     res.status(500).json({
       error: "Server error",
       details: String(err.message || err),
@@ -546,6 +610,7 @@ app.get("/api/artists", async (req, res) => {
   }
 });
 
+// =========== FOLLOW + CHATS ===========
 async function getOrCreateChat(meId, otherUserId) {
   const [a, b] = meId < otherUserId ? [meId, otherUserId] : [otherUserId, meId];
 
@@ -567,7 +632,6 @@ async function getOrCreateChat(meId, otherUserId) {
   return chat;
 }
 
-// Cine urmăresc eu (pentru sidebar "Following")
 app.get("/api/following", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -577,7 +641,7 @@ app.get("/api/following", checkJwt, async (req, res) => {
       include: {
         following: {
           include: {
-            following: true, // user-ul pe care îl urmăresc
+            following: true,
           },
         },
       },
@@ -603,7 +667,6 @@ app.get("/api/following", checkJwt, async (req, res) => {
   }
 });
 
-// Follow / unfollow user (toggle)
 app.post("/api/users/:id/follow", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -613,7 +676,6 @@ app.post("/api/users/:id/follow", checkJwt, async (req, res) => {
       return res.status(400).json({ error: "Invalid target user id" });
     }
 
-    // există deja?
     const existing = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -641,7 +703,6 @@ app.post("/api/users/:id/follow", checkJwt, async (req, res) => {
   }
 });
 
-// Toate mesajele din chat cu user-ul X
 app.get("/api/chats/:userId/messages", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -675,7 +736,6 @@ app.get("/api/chats/:userId/messages", checkJwt, async (req, res) => {
   }
 });
 
-// Trimite mesaj către user-ul X (creează chat-ul dacă nu există)
 app.post("/api/chats/:userId/messages", checkJwt, async (req, res) => {
   try {
     const me = await getOrCreateUserFromToken(req.auth);
@@ -717,6 +777,7 @@ app.post("/api/chats/:userId/messages", checkJwt, async (req, res) => {
   }
 });
 
+// =========== START SERVER ===========
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
   console.log(`Using Gemini model: ${MODEL_ID}`);

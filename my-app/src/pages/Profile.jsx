@@ -31,6 +31,10 @@ export default function Profile() {
   const [myPosts, setMyPosts] = useState([]);
   const [loadingMyPosts, setLoadingMyPosts] = useState(false);
 
+  // 🔥 state pentru badge-uri blockchain
+  const [badgeLoading, setBadgeLoading] = useState(false);
+  const [badgeMessage, setBadgeMessage] = useState("");
+
   const { user, isLoading, isAuthenticated, getAccessTokenSilently } =
     useAuth0();
 
@@ -203,6 +207,44 @@ export default function Profile() {
     }
   }
 
+  // 🔥 funcție: acordă badge „artist_verified” pe blockchain
+  async function handleAwardArtistBadge() {
+    try {
+      setBadgeLoading(true);
+      setBadgeMessage("");
+
+      const token = await getAccessTokenSilently();
+
+      const res = await fetch(`${API_URL}/api/badges/award`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ badgeType: "artist_verified" }),
+      });
+
+      const data = await res.json();
+      console.log("Badge response:", data);
+
+      if (!res.ok || !data.ok) {
+        setBadgeMessage(
+          data.error || "Nu s-a putut acorda badge-ul (vezi consola)."
+        );
+        return;
+      }
+
+      setBadgeMessage(
+        `Badge acordat! Poți vedea tranzacția aici: ${data.explorerUrl}`
+      );
+    } catch (err) {
+      console.error("handleAwardArtistBadge error:", err);
+      setBadgeMessage("Eroare la acordarea badge-ului.");
+    } finally {
+      setBadgeLoading(false);
+    }
+  }
+
   // --- loading Auth0 ---
   if (isLoading) {
     return (
@@ -249,7 +291,7 @@ export default function Profile() {
     <main className="min-h-screen w-full bg-slate-100 flex items-center justify-center py-10 px-4">
       <div className="w-full max-w-6xl bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[12px_12px_0_0_#0F172A] p-8">
         {/* HEADER */}
-        <header className="flex items-center gap-6 mb-10">
+        <header className="flex items-start gap-6 mb-10">
           <div className="h-40 w-40 rounded-full overflow-hidden bg-white border-4 border-slate-900 shadow-[6px_6px_0_0_#0F172A]">
             <img
               src={profileImage}
@@ -258,7 +300,7 @@ export default function Profile() {
             />
           </div>
 
-          <div>
+          <div className="flex-1">
             <h1 className="text-5xl font-bold text-slate-900">{realName}</h1>
             <p className="text-lg text-slate-700 mt-1">({alias})</p>
 
@@ -276,9 +318,9 @@ export default function Profile() {
               <div className="mt-2 text-sm text-slate-700 space-y-1">
                 <p>
                   Rol:{" "}
-                    <span className="font-semibold">
-                      {dbUser.role || "nesetat (BUYER / ARTIST)"}
-                    </span>
+                  <span className="font-semibold">
+                    {dbUser.role || "nesetat (BUYER / ARTIST)"}
+                  </span>
                 </p>
                 <p>
                   Country:{" "}
@@ -302,6 +344,28 @@ export default function Profile() {
                 </p>
               </div>
             )}
+
+       {/* 🔥 Blockchain badge button */}
+
+{/*
+        <div className="mt-4 space-y-2">
+              <button
+                onClick={handleAwardArtistBadge}
+                disabled={badgeLoading}
+                className="px-4 py-2 border-4 border-slate-900 bg-yellow-300 rounded-full shadow-[6px_6px_0_0_#0F172A] text-sm font-semibold disabled:opacity-60"
+              >
+                {badgeLoading
+                  ? "Acord badge..."
+                  : "Acordă badge „Artist Verified”"}
+              </button>
+
+              {badgeMessage && (
+                <p className="text-xs text-slate-700 break-all">
+                  {badgeMessage}
+                </p>
+              )}
+            </div>
+            */}
           </div>
         </header>
 
@@ -477,7 +541,7 @@ export default function Profile() {
                           Domain (for artists)
                         </label>
 
-                        <select
+                          <select
                           name="domain"
                           value={form.domain}
                           onChange={onChange}
