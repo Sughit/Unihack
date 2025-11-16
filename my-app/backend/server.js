@@ -1022,6 +1022,74 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
   }
 });
 
+app.get("/api/my-project-requests", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    let whereClause;
+    let includeClause;
+
+    if (me.role === "ARTIST") {
+      whereClause = {
+        artistId: me.id,
+        status: "ACCEPTED",
+      };
+      includeClause = {
+        buyer: true,
+      };
+    } else {
+      // BUYER sau rol ne-setat
+      whereClause = {
+        buyerId: me.id,
+        status: "ACCEPTED",
+      };
+      includeClause = {
+        artist: true,
+      };
+    }
+
+    const requests = await prisma.projectRequest.findMany({
+      where: whereClause,
+      include: includeClause,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const mapped = requests.map((pr) => ({
+      id: pr.id,
+      budget: pr.budget,
+      deadline: pr.deadline,
+      notes: pr.notes,
+      status: pr.status,
+      createdAt: pr.createdAt,
+      buyer: pr.buyer
+        ? {
+            id: pr.buyer.id,
+            name:
+              pr.buyer.username ||
+              pr.buyer.name ||
+              pr.buyer.email ||
+              "Unknown buyer",
+          }
+        : null,
+      artist: pr.artist
+        ? {
+            id: pr.artist.id,
+            name:
+              pr.artist.username ||
+              pr.artist.name ||
+              pr.artist.email ||
+              "Unknown artist",
+          }
+        : null,
+    }));
+
+    res.json(mapped);
+  } catch (err) {
+    console.error("GET /api/my-project-requests error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
   // =========== START SERVER ===========
   app.listen(PORT, () => {
     console.log(`API running on http://localhost:${PORT}`);

@@ -31,6 +31,9 @@ export default function Profile() {
   const [myPosts, setMyPosts] = useState([]);
   const [loadingMyPosts, setLoadingMyPosts] = useState(false);
 
+  const [myRequests, setMyRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+
   // 🔥 state pentru badge-uri blockchain
   const [badgeLoading, setBadgeLoading] = useState(false);
   const [badgeMessage, setBadgeMessage] = useState("");
@@ -142,6 +145,35 @@ export default function Profile() {
     }
 
     loadMyPosts();
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+    // --- încarcă cererile mele ACCEPTATE ---
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    async function loadMyRequests() {
+      try {
+        setLoadingRequests(true);
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/my-project-requests`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Error loading my project requests:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        setMyRequests(data);
+      } catch (err) {
+        console.error("loadMyRequests error:", err);
+      } finally {
+        setLoadingRequests(false);
+      }
+    }
+
+    loadMyRequests();
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // --- handlers formular edit ---
@@ -394,11 +426,11 @@ export default function Profile() {
 
               <button
                 className={`neo-btn ${
-                  tab === "contact" ? "neo-btn-active" : ""
+                  tab === "request" ? "neo-btn-active" : ""
                 }`}
-                onClick={() => setTab("contact")}
+                onClick={() => setTab("request")}
               >
-                Contact
+                Requests
               </button>
 
               <button
@@ -463,10 +495,72 @@ export default function Profile() {
                 </p>
               )}
 
-              {tab === "contact" && (
-                <p className="text-slate-700 text-lg">
-                  Aici va apărea informația de contact (bio, link-uri etc.).
-                </p>
+              {tab === "request" && (
+                <div>
+                  {dbUser?.role === "ARTIST" ? (
+                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                      Project requests in progress (accepted)
+                    </h2>
+                  ) : (
+                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                      Your accepted project requests
+                    </h2>
+                  )}
+
+                  {loadingRequests ? (
+                    <p className="text-sm text-slate-600">Loading project requests...</p>
+                  ) : myRequests.length === 0 ? (
+                    <p className="text-sm text-slate-600">
+                      {dbUser?.role === "ARTIST"
+                        ? "You don't have any accepted project requests yet."
+                        : "You don't have any accepted project requests yet."}
+                    </p>
+                  ) : (
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                      {myRequests.map((req) => (
+                        <article
+                          key={req.id}
+                          className="bg-slate-100 border-4 border-slate-900 rounded-2xl px-4 py-3 shadow-[4px_4px_0_0_#0F172A]"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {dbUser?.role === "ARTIST"
+                                ? `Buyer: ${req.buyer?.name || "Unknown"}`
+                                : `Artist: ${req.artist?.name || "Unknown"}`}
+                            </h3>
+                            <span className="text-xs font-semibold text-slate-700 uppercase">
+                              {req.status}
+                            </span>
+                          </div>
+
+                          <p className="text-sm text-slate-800">
+                            <span className="font-semibold">Budget:</span> {req.budget}
+                          </p>
+
+                          {req.deadline && (
+                            <p className="text-sm text-slate-800">
+                              <span className="font-semibold">Deadline:</span>{" "}
+                              {new Date(req.deadline).toLocaleDateString()}
+                            </p>
+                          )}
+
+                          {req.notes && (
+                            <p className="text-sm text-slate-800 mt-1 whitespace-pre-wrap">
+                              <span className="font-semibold">Details:</span> {req.notes}
+                            </p>
+                          )}
+
+                          <p className="text-xs text-slate-500 mt-2">
+                            Created at:{" "}
+                            {req.createdAt
+                              ? new Date(req.createdAt).toLocaleString()
+                              : "-"}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
 
               {tab === "edit" && (
