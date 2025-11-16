@@ -39,6 +39,8 @@ export default function Main() {
   // COMMENTS
   const [commentInputs, setCommentInputs] = useState({});
 
+  const [handledRequests, setHandledRequests] = useState({}); // { [messageId]: "ACCEPTED" | "DENIED" }
+
   // ===== Helper pentru erori Auth0 (consent / login) =====
   function handleAuth0Error(err) {
     console.error("Auth0 error:", err);
@@ -63,6 +65,43 @@ export default function Main() {
     }
   }
 
+  function isProjectRequestMessage(m) {
+    return m.text && m.text.startsWith("📌 PROJECT REQUEST");
+  }
+
+  async function respondToProjectRequest(decision, messageId) {
+    if (!activeChatUser || !me) return;
+
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`${API_URL}/api/project-requests/respond`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          buyerId: activeChatUser.id,
+          decision,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Error responding to project request:", await res.text());
+        return;
+      }
+
+      // marcăm local că am tratat cererea pentru mesajul ăsta
+      setHandledRequests((prev) => ({
+        ...prev,
+        [messageId]: decision,
+      }));
+    } catch (err) {
+      console.error("respondToProjectRequest error:", err);
+      handleAuth0Error(err);
+    }
+  }
+
   async function sendProjectRequest() {
     if (!activeChatUser) return;
 
@@ -84,24 +123,19 @@ export default function Main() {
 
       const token = await getAccessTokenSilently();
 
-      const text = [
-        "📌 PROJECT REQUEST",
-        `Budget: ${trimmedBudget}`,
-        `Deadline: ${trimmedDeadline}`,
-        requestNotes.trim() ? `Details: ${requestNotes.trim()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
       const res = await fetch(
-        `${API_URL}/api/chats/${activeChatUser.id}/messages`,
+        `${API_URL}/api/chats/${activeChatUser.id}/project-requests`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({
+            budget: trimmedBudget,
+            deadline: trimmedDeadline,
+            notes: requestNotes.trim() || null,
+          }),
         }
       );
 
@@ -110,7 +144,10 @@ export default function Main() {
         return;
       }
 
-      const msg = await res.json();
+      const data = await res.json();
+      const msg = data.message;
+
+      // adăugăm și mesajul în chat local
       setChatMessages((prev) => [...prev, msg]);
 
       // reset formular
@@ -779,27 +816,60 @@ async function toggleFollow(userId) {
                   No messages yet. Say hi!
                 </p>
               ) : (
-                chatMessages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`flex mb-1 ${
-                      m.fromMe ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
-                        m.fromMe ? "bg-yellow-300" : "bg-slate-100"
-                      }`}
-                    >
-                      {!m.fromMe && (
-                        <div className="text-[9px] font-semibold text-slate-700">
-                          {m.senderName}
-                        </div>
-                      )}
-                      <div className="text-[11px] text-slate-800">{m.text}</div>
-                    </div>
-                  </div>
-                ))
+chatMessages.map((m) => (
+  <div
+    key={m.id}
+    className={`flex flex-col mb-1 ${
+      m.fromMe ? "items-end" : "items-start"
+    }`}
+  >
+    <div
+      className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
+        m.fromMe ? "bg-yellow-300" : "bg-slate-100"
+      }`}
+    >
+      {!m.fromMe && (
+        <div className="text-[9px] font-semibold text-slate-700">
+          {m.senderName}
+        </div>
+      )}
+      <div className="text-[11px] text-slate-800 whitespace-pre-line">
+        {m.text}
+      </div>
+    </div>
+
+    {/* BUTOANE ACCEPT / DENY doar pentru ARTIST, pe mesajele de cerere, netratate încă */}
+    {me?.role === "ARTIST" &&
+      !m.fromMe &&
+      isProjectRequestMessage(m) &&
+      !handledRequests[m.id] && (
+        <div className="mt-1 flex gap-1">
+          <button
+            onClick={() => respondToProjectRequest("ACCEPTED", m.id)}
+            className="text-[10px] px-2 py-0.5 bg-green-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
+          >
+            Accept
+          </button>
+          <button
+            onClick={() => respondToProjectRequest("DENIED", m.id)}
+            className="text-[10px] px-2 py-0.5 bg-red-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
+          >
+            Deny
+          </button>
+        </div>
+      )}
+
+    {/* opțional: afișezi decizia sub mesaj, dacă vrei */}
+    {handledRequests[m.id] && (
+      <div className="mt-1 text-[10px] text-slate-700">
+        {handledRequests[m.id] === "ACCEPTED"
+          ? "You accepted this request."
+          : "You denied this request."}
+      </div>
+    )}
+  </div>
+))
+
               )}
             </div>
 

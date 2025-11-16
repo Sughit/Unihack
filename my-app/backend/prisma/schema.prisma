@@ -13,24 +13,24 @@ enum UserRole {
 }
 
 model User {
-  id            Int        @id @default(autoincrement())
-  auth0Id       String     @unique // sub de la Auth0
-  email         String?    @unique
-  name          String?    // numele de la Auth0
-  username      String?    // completat de utilizator
-  role          UserRole?  // BUYER sau ARTIST
-  country       String?    // țara de origine
-  domain        String?    // doar pt ARTIST
-  languages     String?    // ex: "ro,en"
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id            Int       @id @default(autoincrement())
+  auth0Id       String    @unique // sub de la Auth0
+  email         String?   @unique
+  name          String? // numele de la Auth0
+  username      String? // completat de utilizator
+  role          UserRole? // BUYER sau ARTIST
+  country       String? // țara de origine
+  domain        String? // doar pt ARTIST
+  languages     String? // ex: "ro,en"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   avatarUrl     String?
   walletAddress String?
 
   // relații feed
-  posts     Post[]
-  likes     PostLike[]
-  comments  Comment[]
+  posts    Post[]
+  likes    PostLike[]
+  comments Comment[]
 
   // follow:
   //  - "following" = pe cine urmăresc eu
@@ -44,28 +44,31 @@ model User {
   messages Message[] @relation("UserMessages")
 
   // badge-uri pe baza NFT / tx
-  badges   UserBadge[]
+  badges UserBadge[]
+
+  buyerRequests  ProjectRequest[] @relation("BuyerRequests")
+  artistRequests ProjectRequest[] @relation("ArtistRequests")
 }
 
 model UserBadge {
   id          String   @id @default(cuid())
   user        User     @relation(fields: [userId], references: [id])
   userId      Int
-  type        String   // "artist_verified", "top_seller" etc.
-  txSignature String   // sau mintAddress
+  type        String // "artist_verified", "top_seller" etc.
+  txSignature String // sau mintAddress
   createdAt   DateTime @default(now())
 }
 
 model Post {
-  id        Int        @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   authorId  Int
   title     String
   content   String
-  createdAt DateTime   @default(now())
+  createdAt DateTime @default(now())
 
-  author    User       @relation(fields: [authorId], references: [id])
-  comments  Comment[]
-  likes     PostLike[]
+  author   User       @relation(fields: [authorId], references: [id])
+  comments Comment[]
+  likes    PostLike[]
 }
 
 model Comment {
@@ -75,8 +78,8 @@ model Comment {
   content   String
   createdAt DateTime @default(now())
 
-  author    User     @relation(fields: [authorId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+  post   Post @relation(fields: [postId], references: [id])
 }
 
 model PostLike {
@@ -85,36 +88,37 @@ model PostLike {
   userId    Int
   createdAt DateTime @default(now())
 
-  post      Post     @relation(fields: [postId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@unique([postId, userId])
 }
 
 model Follow {
-  id          Int  @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   followerId  Int
   followingId Int
 
   // utilizatorul care urmărește (EU)
-  follower    User @relation("UserFollows", fields: [followerId], references: [id])
+  follower User @relation("UserFollows", fields: [followerId], references: [id])
 
   // utilizatorul urmărit (ARTISTUL / ALT USER)
-  following   User @relation("UserFollowedBy", fields: [followingId], references: [id])
+  following User @relation("UserFollowedBy", fields: [followingId], references: [id])
 
   @@unique([followerId, followingId])
 }
 
 model Chat {
-  id       Int       @id @default(autoincrement())
-  userAId  Int
-  userBId  Int
+  id      Int @id @default(autoincrement())
+  userAId Int
+  userBId Int
 
-  userA    User      @relation("ChatUserA", fields: [userAId], references: [id])
-  userB    User      @relation("ChatUserB", fields: [userBId], references: [id])
+  userA User @relation("ChatUserA", fields: [userAId], references: [id])
+  userB User @relation("ChatUserB", fields: [userBId], references: [id])
 
-  messages Message[]
+  messages        Message[]
+  projectRequests ProjectRequest[]
 
   @@unique([userAId, userBId], name: "userAId_userBId")
 }
@@ -125,9 +129,37 @@ model Message {
   text      String
   createdAt DateTime @default(now())
 
-  chatId    Int?
-  senderId  Int?
+  chatId   Int?
+  senderId Int?
 
-  chat      Chat?    @relation(fields: [chatId], references: [id])
-  sender    User?    @relation("UserMessages", fields: [senderId], references: [id])
+  chat   Chat? @relation(fields: [chatId], references: [id])
+  sender User? @relation("UserMessages", fields: [senderId], references: [id])
+}
+
+enum ProjectRequestStatus {
+  PENDING
+  ACCEPTED
+  DENIED
+}
+
+model ProjectRequest {
+  id Int @id @default(autoincrement())
+
+  buyer   User @relation("BuyerRequests", fields: [buyerId], references: [id])
+  buyerId Int
+
+  artist   User @relation("ArtistRequests", fields: [artistId], references: [id])
+  artistId Int
+
+  chat   Chat? @relation(fields: [chatId], references: [id])
+  chatId Int?
+
+  budget   String
+  deadline DateTime?
+  notes    String?
+
+  status ProjectRequestStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
