@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Home() {
-  const [messages, setMessages] = useState([
+ const [messages, setMessages] = useState([
     {
       from: "assistant",
       text: "Hi! I’m your Creon Assistant. I can help you find artists, review profiles, or draft project briefs. Ask me anything.",
@@ -12,13 +12,17 @@ function Home() {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
 
+  // 🔹 Asta te duce automat sus când deschizi pagina
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
     };
   }, []);
-
   async function handleSend(e) {
     e.preventDefault();
     const trimmed = input.trim();
