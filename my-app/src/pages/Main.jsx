@@ -16,6 +16,9 @@ export default function Main() {
   const [following, setFollowing] = useState([]);
   const [loadingFollowing, setLoadingFollowing] = useState(true);
 
+  const [chatUsers, setChatUsers] = useState([]);
+  const [loadingChatUsers, setLoadingChatUsers] = useState(true);
+
   // CHAT
   const [activeChatUser, setActiveChatUser] = useState(null); // {id, name}
   const [chatMessages, setChatMessages] = useState([]);
@@ -223,6 +226,54 @@ export default function Main() {
     }, 5000);
 
     return () => clearInterval(interval);
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+    // ----- LOAD CHAT USERS (cei cu care am conversații) -----
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setChatUsers([]);
+      setLoadingChatUsers(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadChatUsers() {
+      try {
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/chats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          console.error("Error loading chat users:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        if (!cancelled) {
+          setChatUsers(data);
+        }
+      } catch (err) {
+        console.error("loadChatUsers error:", err);
+        handleAuth0Error(err);
+      } finally {
+        if (!cancelled) {
+          setLoadingChatUsers(false);
+        }
+      }
+    }
+
+    loadChatUsers();
+
+    const interval = setInterval(() => {
+      loadChatUsers();
+    }, 5000); // refresh la 5s
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- LOAD FEED -----
@@ -727,25 +778,33 @@ async function toggleFollow(userId) {
         <aside className="w-full lg:w-1/4 bg-slate-200 border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-4">
           <h2 className="text-xl font-bold text-slate-900 mb-3">Chats</h2>
 
-          <p className="text-sm text-slate-600 mb-2">Select someone to chat with:</p>
+          <p className="text-sm text-slate-600 mb-2">
+            Select someone to chat with:
+          </p>
 
           <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-            {following.length === 0 ? (
-              <p className="text-sm text-slate-500">You follow no one.</p>
+            {loadingChatUsers ? (
+              <p className="text-sm text-slate-600">Loading chats...</p>
+            ) : chatUsers.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No chats yet. When someone writes to you, they will appear here.
+              </p>
             ) : (
-              following.map((artist) => (
+              chatUsers.map((u) => (
                 <button
-                  key={artist.id}
+                  key={u.id}
                   onClick={() =>
-                    setActiveChatUser({ id: artist.id, name: artist.name })
+                    setActiveChatUser({ id: u.id, name: u.name })
                   }
                   className={`w-full flex flex-col items-start bg-white border-4 border-slate-900 rounded-2xl px-3 py-2 shadow-[4px_4px_0_0_#0F172A] text-left ${
-                    activeChatUser?.id === artist.id ? "bg-yellow-200" : ""
+                    activeChatUser?.id === u.id ? "bg-yellow-200" : ""
                   }`}
                 >
-                  <div className="font-semibold text-slate-900">{artist.name}</div>
+                  <div className="font-semibold text-slate-900">
+                    {u.name}
+                  </div>
                   <div className="text-xs text-slate-600">
-                    {artist.domain || artist.role}
+                    {u.domain || u.role || ""}
                   </div>
                 </button>
               ))
@@ -816,59 +875,59 @@ async function toggleFollow(userId) {
                   No messages yet. Say hi!
                 </p>
               ) : (
-chatMessages.map((m) => (
-  <div
-    key={m.id}
-    className={`flex flex-col mb-1 ${
-      m.fromMe ? "items-end" : "items-start"
-    }`}
-  >
-    <div
-      className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
-        m.fromMe ? "bg-yellow-300" : "bg-slate-100"
-      }`}
-    >
-      {!m.fromMe && (
-        <div className="text-[9px] font-semibold text-slate-700">
-          {m.senderName}
-        </div>
-      )}
-      <div className="text-[11px] text-slate-800 whitespace-pre-line">
-        {m.text}
-      </div>
-    </div>
+                chatMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex flex-col mb-1 ${
+                      m.fromMe ? "items-end" : "items-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-2 py-1 border-2 border-slate-900 shadow-[2px_2px_0_0_#0F172A] ${
+                        m.fromMe ? "bg-yellow-300" : "bg-slate-100"
+                      }`}
+                    >
+                      {!m.fromMe && (
+                        <div className="text-[9px] font-semibold text-slate-700">
+                          {m.senderName}
+                        </div>
+                      )}
+                      <div className="text-[11px] text-slate-800 whitespace-pre-line">
+                        {m.text}
+                      </div>
+                    </div>
 
-    {/* BUTOANE ACCEPT / DENY doar pentru ARTIST, pe mesajele de cerere, netratate încă */}
-    {me?.role === "ARTIST" &&
-      !m.fromMe &&
-      isProjectRequestMessage(m) &&
-      !handledRequests[m.id] && (
-        <div className="mt-1 flex gap-1">
-          <button
-            onClick={() => respondToProjectRequest("ACCEPTED", m.id)}
-            className="text-[10px] px-2 py-0.5 bg-green-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
-          >
-            Accept
-          </button>
-          <button
-            onClick={() => respondToProjectRequest("DENIED", m.id)}
-            className="text-[10px] px-2 py-0.5 bg-red-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
-          >
-            Deny
-          </button>
-        </div>
-      )}
+                    {/* BUTOANE ACCEPT / DENY doar pentru ARTIST, pe mesajele de cerere, netratate încă */}
+                    {me?.role === "ARTIST" &&
+                      !m.fromMe &&
+                      isProjectRequestMessage(m) &&
+                      !handledRequests[m.id] && (
+                        <div className="mt-1 flex gap-1">
+                          <button
+                            onClick={() => respondToProjectRequest("ACCEPTED", m.id)}
+                            className="text-[10px] px-2 py-0.5 bg-green-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => respondToProjectRequest("DENIED", m.id)}
+                            className="text-[10px] px-2 py-0.5 bg-red-300 border-2 border-slate-900 rounded-full font-semibold shadow-[2px_2px_0_0_#0F172A]"
+                          >
+                            Deny
+                          </button>
+                        </div>
+                      )}
 
-    {/* opțional: afișezi decizia sub mesaj, dacă vrei */}
-    {handledRequests[m.id] && (
-      <div className="mt-1 text-[10px] text-slate-700">
-        {handledRequests[m.id] === "ACCEPTED"
-          ? "You accepted this request."
-          : "You denied this request."}
-      </div>
-    )}
-  </div>
-))
+                    {/* opțional: afișezi decizia sub mesaj, dacă vrei */}
+                    {handledRequests[m.id] && (
+                      <div className="mt-1 text-[10px] text-slate-700">
+                        {handledRequests[m.id] === "ACCEPTED"
+                          ? "You accepted this request."
+                          : "You denied this request."}
+                      </div>
+                    )}
+                  </div>
+                ))
 
               )}
             </div>

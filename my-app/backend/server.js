@@ -960,6 +960,49 @@ app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
   }
 });
 
+// Toți userii cu care am un chat (indiferent dacă îi urmăresc sau nu)
+app.get("/api/chats", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+
+    const chats = await prisma.chat.findMany({
+      where: {
+        OR: [{ userAId: me.id }, { userBId: me.id }],
+      },
+      include: {
+        userA: true,
+        userB: true,
+      },
+    });
+
+    // deduplicăm pe id-ul "celuilalt" user
+    const map = new Map();
+
+    for (const c of chats) {
+      const other = c.userAId === me.id ? c.userB : c.userA;
+      if (!other) continue;
+
+      if (!map.has(other.id)) {
+        map.set(other.id, {
+          id: other.id,
+          name:
+            other.username ||
+            other.name ||
+            other.email ||
+            "Unknown user",
+          role: other.role,
+          domain: other.domain,
+        });
+      }
+    }
+
+    res.json(Array.from(map.values()));
+  } catch (err) {
+    console.error("GET /api/chats error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
   // Artist -> acceptă sau refuză o cerere de proiect
   app.post("/api/project-requests/respond", checkJwt, async (req, res) => {
     try {
