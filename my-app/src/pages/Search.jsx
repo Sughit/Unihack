@@ -1,5 +1,6 @@
 // src/pages/Search.jsx
 import React, { useState, useMemo, useEffect } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
 
 // Domenii și țări (le păstrăm hardcodate deocamdată)
 const ALL_DOMAINS = ["Any", "Illustration", "Music", "Video", "Branding"];
@@ -39,6 +40,10 @@ export default function Search() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // 🔐 Auth0 pentru follow
+  const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+  const [followingIds, setFollowingIds] = useState(new Set());
+
   // ====== FETCH ARTISTS DIN BACKEND ======
   useEffect(() => {
     let cancelled = false;
@@ -77,13 +82,81 @@ export default function Search() {
     };
   }, []);
 
+  // ====== LOAD FOLLOWING (ca în Main.jsx) ======
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setFollowingIds(new Set());
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadFollowing() {
+      try {
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_BASE}/api/following`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+
+        const data = await res.json(); // listă de useri
+        if (!cancelled) {
+          const ids = new Set(data.map((u) => u.id));
+          setFollowingIds(ids);
+        }
+      } catch (err) {
+        console.error("loadFollowing (Search) error:", err);
+      }
+    }
+
+    loadFollowing();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, getAccessTokenSilently]);
+
+  // ====== TOGGLE FOLLOW DIN SEARCH ======
+  async function handleToggleFollow(userId) {
+    if (!isAuthenticated) {
+      alert("You need to be logged in to follow artists.");
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`${API_BASE}/api/users/${userId}/follow`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        console.error("Error toggling follow (Search):", await res.text());
+        return;
+      }
+
+      const data = await res.json(); // { following: true/false }
+
+      setFollowingIds((prev) => {
+        const next = new Set(prev);
+        if (data.following) {
+          next.add(userId);
+        } else {
+          next.delete(userId);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error("handleToggleFollow error:", err);
+    }
+  }
+
   const availableCounties = country === "Romania" ? COUNTIES_RO : ["Any"];
 
   // ====== FILTRARE ARTIȘTI PE BAZĂ DE CONTROALE ======
   const filteredArtists = useMemo(() => {
     return artists.filter((a) => {
-      const alias =
-        a.username || a.name || a.email || "Unknown artist";
+      const alias = a.username || a.name || a.email || "Unknown artist";
 
       // Search în nume/alias
       if (
@@ -118,8 +191,6 @@ export default function Search() {
       }
 
       // Experience: momentan nu e în modelul User.
-      // Dacă adaugi un câmp experience: Int? în Prisma,
-      // îl folosești direct aici.
       const expValue =
         typeof a.experience === "number" ? a.experience : 0;
 
@@ -280,13 +351,23 @@ export default function Search() {
                 const expValue =
                   typeof a.experience === "number" ? a.experience : null;
 
+                const avatarUrl =
+                  a.avatarUrl ||
+                  "https://placehold.co/160x160/png?text=Avatar";
+
+                const isFollowing = followingIds.has(a.id);
+
                 return (
                   <article
                     key={a.id}
                     className="bg-white border-4 border-slate-900 rounded-3xl shadow-[8px_8px_0_0_#0F172A] p-6 flex flex-col items-center"
                   >
-                    <div className="h-20 w-20 rounded-full border-4 border-slate-900 flex items-center justify-center mb-4 text-xs font-medium">
-                      avatar
+                    <div className="h-20 w-20 rounded-full border-4 border-slate-900 overflow-hidden flex items-center justify-center mb-4 bg-slate-100">
+                      <img
+                        src={avatarUrl}
+                        alt={`${alias} avatar`}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
                     <h3 className="text-lg font-semibold mb-1">{alias}</h3>
@@ -296,14 +377,25 @@ export default function Search() {
                     </p>
 
                     <p className="text-sm text-center mb-4 line-clamp-3">
-                      {/* Deocamdată nu ai descriere în modelul User.
-                          Poți ulterior adăuga un câmp bio/description în Prisma. */}
                       {a.bio || "No description provided yet."}
                     </p>
 
-                    <button className="mt-auto w-full border-2 border-slate-900 rounded-xl py-2 text-sm font-semibold shadow-[4px_4px_0_0_#0F172A]">
-                      CONTACT
-                    </button>
+                    <div className="mt-auto flex w-full gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleFollow(a.id)}
+                        className="flex-1 text-xs nav-btnborder-2 border-slate-900 rounded-xl py-2 font-semibold shadow-[4px_4px_0_0_#0F172A] bg-white"
+                      >
+                        {isFollowing ? "Unfollow" : "Follow"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="flex-1 text-xs border-2 border-slate-900 rounded-xl py-2 font-semibold shadow-[4px_4px_0_0_#0F172A] bg-amber-200"
+                      >
+                        View profile
+                      </button>
+                    </div>
                   </article>
                 );
               })}
