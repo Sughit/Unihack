@@ -199,47 +199,34 @@ export default function Main() {
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- LOAD FOLLOWING -----
-useEffect(() => {
-  if (!isAuthenticated) {
-    setFollowing([]);
-    setLoadingFollowing(false);
-    return;
-  }
-
-  let cancelled = false;
-
-  async function loadFollowing() {
-    try {
-      if (!cancelled) setLoadingFollowing(true);
-
-      const token = await getAccessTokenSilently();
-      const res = await fetch(`${API_URL}/api/following`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (!cancelled) setFollowing(data);
-      }
-    } catch (err) {
-      console.error("loadFollowing error:", err);
-      handleAuth0Error(err);
-    } finally {
-      if (!cancelled) setLoadingFollowing(false);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setFollowing([]);
+      setLoadingFollowing(false);
+      return;
     }
-  }
 
-  loadFollowing();
+    async function loadFollowing() {
+      try {
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/following`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) setFollowing(await res.json());
+      } catch (err) {
+        console.error("loadFollowing error:", err);
+        handleAuth0Error(err);
+      }
+    }
 
-  const interval = setInterval(() => {
     loadFollowing();
-  }, 10000); // mai rar
 
-  return () => {
-    cancelled = true;
-    clearInterval(interval);
-  };
-}, [isAuthenticated, getAccessTokenSilently]);
+    const interval = setInterval(() => {
+      loadFollowing();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, getAccessTokenSilently]);
 
     // ----- LOAD CHAT USERS (cei cu care am conversații) -----
   useEffect(() => {
@@ -290,39 +277,38 @@ useEffect(() => {
   }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- LOAD FEED -----
-useEffect(() => {
-  if (!isAuthenticated) {
-    setPosts([]);
-    setLoadingPosts(false);
-    return;
-  }
-
-  async function loadFeed() {
-    try {
-      const token = await getAccessTokenSilently();
-      const res = await fetch(`${API_URL}/api/feed`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      setPosts(data);
-    } catch (err) {
-      console.error("loadFeed error:", err);
-      handleAuth0Error(err);
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setPosts([]);
+      setLoadingPosts(false);
+      return;
     }
-  }
 
-  // încărcare prima dată
-  loadFeed();
+    async function loadFeed() {
+      try {
+        const token = await getAccessTokenSilently();
+        const res = await fetch(`${API_URL}/api/feed`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setPosts(data);
+      } catch (err) {
+        console.error("loadFeed error:", err);
+        handleAuth0Error(err);
+      }
+    }
 
-  // autorefresh
-  const interval = setInterval(() => {
+    // încărcare prima dată
     loadFeed();
-  }, 5000);
 
-  return () => clearInterval(interval);
-}, [isAuthenticated, getAccessTokenSilently]);
+    // autorefresh
+    const interval = setInterval(() => {
+      loadFeed();
+    }, 5000); // 5 secunde
 
+    return () => clearInterval(interval);
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   // ----- COMPOSER -----
   function handleComposerChange(e) {
