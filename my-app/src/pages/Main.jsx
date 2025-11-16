@@ -305,9 +305,10 @@ async function toggleFollow(userId) {
       return;
     }
 
+    let cancelled = false;
+
     async function loadChat() {
       try {
-        setLoadingChat(true);
         const token = await getAccessTokenSilently();
         const res = await fetch(
           `${API_URL}/api/chats/${activeChatUser.id}/messages`,
@@ -322,16 +323,28 @@ async function toggleFollow(userId) {
         }
 
         const data = await res.json();
-        setChatMessages(data);
+        if (!cancelled) {
+          setChatMessages(data);
+        }
       } catch (err) {
         console.error("loadChat error:", err);
         handleAuth0Error(err);
-      } finally {
-        setLoadingChat(false);
       }
     }
 
+    // prima încărcare imediat când deschizi chatul
     loadChat();
+
+    // 🔁 auto-refresh la fiecare 3 secunde cât timp chatul e deschis
+    const interval = setInterval(() => {
+      loadChat();
+    }, 3000);
+
+    // cleanup când se închide chatul sau se schimbă userul
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [activeChatUser, isAuthenticated, getAccessTokenSilently]);
 
   async function sendChatMessage() {
