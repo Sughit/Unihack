@@ -862,19 +862,16 @@
     }
   });
 
-  // Buyer -> trimite o cerere de proiect către artistul cu care vorbește
-  app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
-    try {
-      const me = await getOrCreateUserFromToken(req.auth);
-      const otherUserId = Number(req.params.userId);
+// Buyer -> trimite o cerere de proiect către artistul cu care vorbește
+// Buyer -> trimite o cerere de proiect către artistul cu care vorbește
+app.post("/api/chats/:userId/project-requests", checkJwt, async (req, res) => {
+  try {
+    const me = await getOrCreateUserFromToken(req.auth);
+    const otherUserId = Number(req.params.userId);
 
-      if (!otherUserId || Number.isNaN(otherUserId)) {
-        return res.status(400).json({ error: "Invalid user id" });
-      }
-
-      if (me.id === otherUserId) {
-        return res.status(400).json({ error: "Cannot send request to yourself" });
-      }
+    if (Number.isNaN(otherUserId) || otherUserId === me.id) {
+      return res.status(400).json({ error: "Invalid user id" });
+    }
 
       if (me.role !== "BUYER") {
         return res.status(403).json({ error: "Only BUYER can send project requests" });
@@ -895,15 +892,15 @@
         deadlineDate = d;
       }
 
-      // găsim sau creăm chat între cei doi
-      let chat = await prisma.chat.findFirst({
-        where: {
-          OR: [
-            { userAId: me.id, userBId: otherUserId },
-            { userAId: otherUserId, userBId: me.id },
-          ],
-        },
-      });
+    // găsim sau creăm chat-ul între cei doi
+    let chat = await prisma.chat.findFirst({
+      where: {
+        OR: [
+          { userAId: me.id, userBId: otherUserId },
+          { userAId: otherUserId, userBId: me.id },
+        ],
+      },
+    });
 
       if (!chat) {
         chat = await prisma.chat.create({
@@ -914,40 +911,54 @@
         });
       }
 
-      // creăm ProjectRequest în DB
-      const pr = await prisma.projectRequest.create({
-        data: {
-          buyerId: me.id,
-          artistId: otherUserId,
-          chatId: chat.id,
-          budget,
-          deadline: deadlineDate,
-          notes: notes || null,
-        },
-      });
+    // salvăm cererea în DB
+    const pr = await prisma.projectRequest.create({
+      data: {
+        buyerId: me.id,
+        artistId: otherUserId,
+        chatId: chat.id,
+        budget,
+        deadline: deadlineDate,
+        notes: notes || null,
+      },
+    });
 
-      // trimitem și mesaj în chat
-      const textLines = [
-        "📌 PROJECT REQUEST",
-        `Budget: ${budget}`,
-        deadline ? `Deadline: ${deadline}` : null,
-        notes ? `Details: ${notes}` : null,
-      ].filter(Boolean);
+    // trimitem și mesaj în chat ca să vadă și artistul
+    const textLines = [
+      "📌 PROJECT REQUEST",
+      `Budget: ${budget}`,
+      deadline ? `Deadline: ${deadline}` : null,
+      notes ? `Details: ${notes}` : null,
+    ].filter(Boolean);
 
-      const message = await prisma.message.create({
-        data: {
-          chatId: chat.id,
-          senderId: me.id,
-          text: textLines.join("\n"),
-        },
-      });
+    const message = await prisma.message.create({
+      data: {
+        chatId: chat.id,
+        senderId: me.id,
+        text: textLines.join("\n"),
+      },
+      include: { sender: true },
+    });
 
-      res.json({ projectRequest: pr, message });
-    } catch (err) {
-      console.error("POST /api/chats/:userId/project-requests error:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
+    res.json({
+      projectRequest: pr,
+      message: {
+        id: message.id,
+        text: message.text,
+        createdAt: message.createdAt,
+        fromMe: true,
+        senderName:
+          message.sender.username ||
+          message.sender.name ||
+          message.sender.email ||
+          "You",
+      },
+    });
+  } catch (err) {
+    console.error("POST /api/chats/:userId/project-requests error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
   // Artist -> acceptă sau refuză o cerere de proiect
   app.post("/api/project-requests/respond", checkJwt, async (req, res) => {
@@ -959,23 +970,26 @@
         return res.status(400).json({ error: "Invalid buyer id" });
       }
 
-      if (me.role !== "ARTIST") {
-        return res.status(403).json({ error: "Only ARTIST can respond to project requests" });
-      }
+    if (me.role !== "ARTIST") {
+      return res.status(403).json({ error: "Only ARTIST can respond to project requests" });
+    }
+
+    if (!buyerId || Number.isNaN(Number(buyerId))) {
+      return res.status(400).json({ error: "Invalid buyer id" });
+    }
 
       if (!["ACCEPTED", "DENIED"].includes(decision)) {
         return res.status(400).json({ error: "Decision must be ACCEPTED or DENIED" });
       }
 
-      // găsim cea mai recentă cerere PENDING între buyer și artist
-      const pr = await prisma.projectRequest.findFirst({
-        where: {
-          buyerId: Number(buyerId),
-          artistId: me.id,
-          status: "PENDING",
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    const pr = await prisma.projectRequest.findFirst({
+      where: {
+        buyerId: Number(buyerId),
+        artistId: me.id,
+        status: "PENDING",
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
       if (!pr) {
         return res.status(404).json({ error: "No pending request found" });
@@ -986,12 +1000,11 @@
         data: { status: decision },
       });
 
-      // opțional: mesaj automat în chat
-      if (pr.chatId) {
-        const text =
-          decision === "ACCEPTED"
-            ? "✅ Project request accepted."
-            : "❌ Project request denied.";
+    if (pr.chatId) {
+      const text =
+        decision === "ACCEPTED"
+          ? "✅ Project request accepted."
+          : "❌ Project request denied.";
 
         await prisma.message.create({
           data: {
@@ -1002,13 +1015,12 @@
         });
       }
 
-      res.json(updated);
-    } catch (err) {
-      console.error("POST /api/project-requests/respond error:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-
+    res.json(updated);
+  } catch (err) {
+    console.error("POST /api/project-requests/respond error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
   // =========== START SERVER ===========
   app.listen(PORT, () => {
